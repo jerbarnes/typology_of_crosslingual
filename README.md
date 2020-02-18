@@ -19,3 +19,7 @@ We have POS and dependency annotated data for all langauges available from the [
 We also have similar sentiment datasets for these languages.
 
 
+Current Problems
+----
+1. We still need to properly binarize some of the data (ko,ru,vi).
+2. We need to make the training and test datasets comparable.
