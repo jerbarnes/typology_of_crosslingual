@@ -16,7 +16,18 @@ Data
 
 We have POS and dependency annotated data for all langauges available from the [Universal Dependencies project](https://universaldependencies.org/)
 
-We also have similar sentiment datasets for these languages.
+We also have similar sentiment datasets for these languages. Each dataset is divided into train.csv, dev.csv, test.csv. The data can be extracted into python using the csv class.
+
+```
+import csv
+
+labels, texts = [], []
+
+with open("data/sentiment/en/train.csv") as infile:
+    for label, text in csv.reader(infile):
+        labels.append(label)
+        texts.append(text)
+```
 
 
 Current Problems
