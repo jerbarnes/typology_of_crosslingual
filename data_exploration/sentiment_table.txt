@@ -1,0 +1,15 @@
+    \fusional{Fusional}  & Bulgarian & 6208	& 902 &	1837 \\ % & \url{http://bkapukaranov.github.io/}
+    \fusional{Fusional} & English &  6920 &	872 & 1821\\
+    \fusional{Fusional}  & Russian & 2938 & 424 & 867  \\ %& \url{https://www.kaggle.com/c/6766/download-all}
+    \fusional{Fusional} & Slovak & 1507 & 214 &	437  \\ %& \url{https://www.aclweb.org/anthology/W19-3716} \\
+    \fusional{Fusional}  & Croatian & \\ %& \url{http://takelab.fer.hr/data/cropinion/} \\
+    \isolating{Isolating} & Chinese &  \\ %& \url{http://www.informatics.sussex.ac.uk/users/tz21/it168test.zip} \\
+    \isolating{Isolating} & Vietnamese &  \\ %& \url{http://vlsp.org.vn/resources-vlsp2016} \\
+    \isolating{Isolating} & Thai &  \\ %https://github.com/PyThaiNLP/wisesight-sentiment
+    \agglutinative{Agglutinative} & Finnish & 1355 & 199 & 397 \\ %& \url{https://dspace.cc.tut.fi/dpub/bitstream/handle/123456789/26114/Nukarinen.pdf?sequence=3&isAllowed=y} \\
+    \agglutinative{Agglutinative} & Basque & 789 & 113 & 227  \\ % & \url{https://www.aclweb.org/anthology/W19-2718}
+    \agglutinative{Agglutinative} & Japanese & \\ %& \url{https://s3.amazonaws.com/amazon-reviews-pds/tsv/amazon_reviews_multilingual_JP_v1_00.tsv.gz} \\
+    \agglutinative{Agglutinative} & Korean & 12312 & 2532 & 5072\\ %& \url{http://word.snu.ac.kr/kosac/corpus.php}\\
+    \agglutinative{Agglutinative} & Turkish &   \\
+    \introflexive{Introflexive} & Arabic & 35481 & 5134 & 10076 \\
+    \introflexive{Introflexive} & Hebrew & 6207 & 904 &	1771 \\
