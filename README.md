@@ -72,5 +72,4 @@ with open("data/sentiment/en/train.csv") as infile:
 
 Current Problems
 ----
-1. We still need to properly binarize some of the sentiment data (ko,ru,vi).
-2. We need to make the training and test sentiment datasets comparable.
+1. Need to deal with longer sentiment examples by breaking into chunks that fit into transformer model and then aggregating the predictions
