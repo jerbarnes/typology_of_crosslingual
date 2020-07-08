@@ -8,8 +8,8 @@
     \isolating{Isolating} & Thai &  \\
     \agglutinative{Agglutinative} & Finnish & \\ 
     \agglutinative{Agglutinative} & Basque &\\
-    \agglutinative{Agglutinative} & Japanese  \\ 
+    \agglutinative{Agglutinative} & Japanese & \\ 
     \agglutinative{Agglutinative} & Korean & \\ 
-    \agglutinative{Agglutinative} & Turkish  \\
-    \introflexive{Introflexive} & Arabic   \\
+    \agglutinative{Agglutinative} & Turkish & \\
+    \introflexive{Introflexive} & Arabic &  \\
     \introflexive{Introflexive} & Hebrew &  \\
