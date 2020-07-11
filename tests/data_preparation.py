@@ -71,3 +71,8 @@ def convert_examples_to_tf_dataset(
             tf.TensorShape([]),
         ),
     )
+
+def make_batches(dataset, batch_size, repetitions):
+    n_batches = len(list(iter(dataset.shuffle(10000).batch(batch_size))))
+    output = dataset.shuffle(10000, reshuffle_each_iteration=True).batch(batch_size).repeat(repetitions)
+    return output, n_batches
