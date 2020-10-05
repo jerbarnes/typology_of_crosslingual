@@ -4,12 +4,15 @@ import sys
 sys.path.append("..")
 from data_preparation.data_preparation_pos import convert_examples_to_tf_dataset, read_conll
 
-def load_data(path, batch_size, tokenizer, tagset):
+def load_data(path, batch_size, tokenizer, tagset, max_length):
     """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
     test_data = read_conll(glob.glob(path + "/*-test.conllu")[0])
     test_examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(test_data[0], 
                                                                                                       test_data[1],
                                                                                                       test_data[2])]
+    # In case some example is over max length
+    test_examples = [example for example in test_examples if len(tokenizer.subword_tokenize(example["tokens"], 
+                                                                                            example["tags"])[0]) <= max_length]
     test_dataset = convert_examples_to_tf_dataset(examples=test_examples, tokenizer=tokenizer, tagset=tagset, max_length=256)
     test_dataset = test_dataset.batch(batch_size)
     return test_examples, test_dataset
