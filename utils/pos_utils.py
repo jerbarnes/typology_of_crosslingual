@@ -1,6 +1,7 @@
 import glob
 import numpy as np
 import sys
+import tensorflow.keras.backend as K
 sys.path.append("..")
 from data_preparation.data_preparation_pos import convert_examples_to_tf_dataset, read_conll
 
@@ -76,3 +77,11 @@ def reconstruct_subwords(subword_locations, tokens, labels, filtered_preds, logi
     new_labels += labels[prev_end:]
     
     return new_tokens, new_labels, new_preds
+
+def ignore_acc(y_true_class, y_pred_class, class_to_ignore=0):
+    y_pred_class = K.cast(K.argmax(y_pred_class, axis=-1), 'int32')
+    y_true_class = K.cast(y_true_class, 'int32')
+    ignore_mask = K.cast(K.not_equal(y_true_class, class_to_ignore), 'int32')
+    matches = K.cast(K.equal(y_true_class, y_pred_class), 'int32') * ignore_mask
+    accuracy = K.sum(matches) / K.maximum(K.sum(ignore_mask), 1)
+    return accuracy
