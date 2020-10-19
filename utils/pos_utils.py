@@ -8,11 +8,11 @@ from data_preparation.data_preparation_pos import convert_examples_to_tf_dataset
 def load_data(path, batch_size, tokenizer, tagset, max_length):
     """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
     test_data = read_conll(glob.glob(path + "/*-test.conllu")[0])
-    test_examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(test_data[0], 
+    test_examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(test_data[0],
                                                                                                       test_data[1],
                                                                                                       test_data[2])]
     # In case some example is over max length
-    test_examples = [example for example in test_examples if len(tokenizer.subword_tokenize(example["tokens"], 
+    test_examples = [example for example in test_examples if len(tokenizer.subword_tokenize(example["tokens"],
                                                                                             example["tags"])[0]) <= max_length]
     test_dataset = convert_examples_to_tf_dataset(examples=test_examples, tokenizer=tokenizer, tagset=tagset, max_length=256)
     test_dataset = test_dataset.batch(batch_size)
@@ -34,7 +34,7 @@ def filter_padding_tokens(test_examples, preds, label_map, tokenizer):
         labels.extend(example_labels)
         tokens.extend(example_tokens)
         logits.extend(example_logits)
-        
+
     return tokens, labels, filtered_preds, logits
 
 def find_subword_locations(tokens):
@@ -47,7 +47,7 @@ def find_subword_locations(tokens):
         if not(tokens[i].startswith("##")) and tokens[i-1].startswith("##") and i != 0:
             end = i
             subword_locations.append((start, end))
-            
+
     return subword_locations
 
 def reconstruct_subwords(subword_locations, tokens, labels, filtered_preds, logits):
@@ -75,7 +75,7 @@ def reconstruct_subwords(subword_locations, tokens, labels, filtered_preds, logi
     new_preds += filtered_preds[prev_end:]
     new_tokens += tokens[prev_end:]
     new_labels += labels[prev_end:]
-    
+
     return new_tokens, new_labels, new_preds
 
 def ignore_acc(y_true_class, y_pred_class, class_to_ignore=0):
@@ -85,3 +85,7 @@ def ignore_acc(y_true_class, y_pred_class, class_to_ignore=0):
     matches = K.cast(K.equal(y_true_class, y_pred_class), 'int32') * ignore_mask
     accuracy = K.sum(matches) / K.maximum(K.sum(ignore_mask), 1)
     return accuracy
+
+def get_ud_tags():
+    return ["O", "_", "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET", "INTJ", "NOUN", "NUM",
+          "PART", "PRON", "PROPN", "PUNCT", "SCONJ", "SYM", "VERB", "X"]

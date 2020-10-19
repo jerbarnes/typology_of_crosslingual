@@ -32,8 +32,12 @@ def order_table(table):
         lang = line.split("&")[1].strip()
         if lang in current_langs: # Not all languages need to be present
             lang_order.append(lang)
+    if isinstance(table.columns, pd.MultiIndex): # Check for hierarchical columns
+        level = 0
+    else:
+        level = None
     table.insert(0, "sort", table[lang_colname].apply(lambda x: lang_order.index(x)))
-    table = table.sort_values(by=["sort"]).drop("sort", axis=1).reset_index(drop=True)
+    table = table.sort_values(by=["sort"]).drop("sort", axis=1, level=level).reset_index(drop=True)
     return table
 
 def convert_table_to_latex(table):
@@ -51,7 +55,7 @@ def convert_table_to_latex(table):
     # Pandas output
     return table
 
-def run_through_data(data_path, f, table=None):
+def run_through_data(data_path, f, table=None, **kwargs):
     code_dicts = make_lang_code_dicts()
     code_to_name = code_dicts["code_to_name"]
     name_to_code = code_dicts["name_to_code"]
@@ -69,16 +73,23 @@ def run_through_data(data_path, f, table=None):
         else:
             print(file_path, "is not a valid data path, skipping")
             continue
-        table = f(file_path, lang_name, lang_code, dataset, table)
+        table = f({"file_path": file_path,
+                   "lang_name": lang_name,
+                   "lang_code": lang_code,
+                   "dataset": dataset},
+                   table, **kwargs)
     return table
 
 def find_lang_column(table):
     r = re.compile(r".*[lL]ang")
-    matches = list(filter(r.match, table.columns))
+    if isinstance(table.columns, pd.MultiIndex): # Check for hierarchical columns
+        matches = list(filter(r.match, table.columns.levels[0])) # Check in top level
+    else:
+        matches = list(filter(r.match, table.columns))
     if matches:
         return matches[0]
     else:
-        raise Exception("No match for language found in columns")
+        return None
 
 def add_lang_groups(table, colname="group"):
     table = order_table(table) # In case it's not already in correct order
