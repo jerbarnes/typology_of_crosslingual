@@ -31,3 +31,27 @@ def mean_exclude_by_group(table):
         table_by_test_group[train_lang] = metric_avgs
 
     return table_by_test_group
+
+def retrieve_results(file_path, skip):
+    results = pd.read_excel(file_path, sheet_name=None, header=None)
+    output = {}
+
+    for metric, df in results.items():
+        table_names = [
+            "langvlang",
+            "langvgroup",
+            "groupvgroup",
+        ]
+
+        tables = {}
+        start = 0
+        end = df.shape[1] - 1
+        for name in table_names:
+            temp = df.loc[start:end]
+            temp.columns = temp.iloc[0].values
+            temp = temp.drop(temp.index[0])
+            start = end + skip + 1
+            end = start + 6
+            tables[name] = temp.reset_index(drop=True)
+        output[metric] = tables
+    return output

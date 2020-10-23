@@ -5,9 +5,9 @@ import tensorflow.keras.backend as K
 sys.path.append("..")
 from data_preparation.data_preparation_pos import convert_examples_to_tf_dataset, read_conll
 
-def load_data(path, batch_size, tokenizer, tagset, max_length):
+def load_data(path, batch_size, tokenizer, tagset, max_length, dataset_name="test"):
     """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
-    test_data = read_conll(glob.glob(path + "/*-test.conllu")[0])
+    test_data = read_conll(glob.glob(path + "/*-{}.conllu".format(dataset_name))[0])
     test_examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(test_data[0],
                                                                                                       test_data[1],
                                                                                                       test_data[2])]
