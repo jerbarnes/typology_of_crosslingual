@@ -14,7 +14,7 @@ def load_data(path, batch_size, tokenizer, tagset, max_length, dataset_name="tes
     # In case some example is over max length
     test_examples = [example for example in test_examples if len(tokenizer.subword_tokenize(example["tokens"],
                                                                                             example["tags"])[0]) <= max_length]
-    test_dataset = convert_examples_to_tf_dataset(examples=test_examples, tokenizer=tokenizer, tagset=tagset, max_length=256)
+    test_dataset = convert_examples_to_tf_dataset(examples=test_examples, tokenizer=tokenizer, tagset=tagset, max_length=max_length)
     test_dataset = test_dataset.batch(batch_size)
     return test_examples, test_dataset
 
