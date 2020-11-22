@@ -32,6 +32,14 @@ def mean_exclude_by_group(table):
 
     return table_by_test_group
 
+def mean_exclude(table):
+    lang_cols = table.columns[1:]
+    means = []
+    for i, row in table.iterrows():
+        row_mean = row[[col for col in lang_cols if col != row.iloc[0]]].mean()
+        means.append(row_mean)
+    return means
+
 def retrieve_results(file_path, skip):
     results = pd.read_excel(file_path, sheet_name=None, header=None)
     output = {}
