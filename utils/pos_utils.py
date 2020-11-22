@@ -1,5 +1,6 @@
 import glob
 import numpy as np
+import pandas as pd
 import sys
 import tensorflow.keras.backend as K
 sys.path.append("..")
@@ -19,14 +20,16 @@ def load_data(path, batch_size, tokenizer, tagset, max_length, dataset_name="tes
     return test_examples, test_dataset
 
 def filter_padding_tokens(test_examples, preds, label_map, tokenizer):
-    """Filters padding tokens, labels, predictions and logits, then returns these as flattened lists"""
+    """Filters padding tokens, labels, predictions and logits, then returns these as flattened lists, along with subword locations"""
     filtered_preds = []
     labels = []
     tokens = []
     logits = []
+    subword_locations = []
+    init = 0
 
     for i in range(len(test_examples)):
-        example_tokens, example_labels, _ = tokenizer.subword_tokenize(test_examples[i]["tokens"], test_examples[i]["tags"])
+        example_tokens, example_labels, example_idx_map = tokenizer.subword_tokenize(test_examples[i]["tokens"], test_examples[i]["tags"])
         example_labels = [label_map[label] for label in example_labels]
         example_preds = preds[0].argmax(axis=-1)[i, :len(example_labels)]
         example_logits = preds[0][i, :len(example_labels)]
@@ -35,7 +38,16 @@ def filter_padding_tokens(test_examples, preds, label_map, tokenizer):
         tokens.extend(example_tokens)
         logits.extend(example_logits)
 
-    return tokens, labels, filtered_preds, logits
+        # Subwords
+        counts = pd.Series(example_idx_map).value_counts(sort=False)
+        example_idx_map = np.array(example_idx_map)
+        all_indexes = np.arange(init, init+len(example_idx_map))
+        for idx in counts[counts > 1].index:
+            word_locs = all_indexes[example_idx_map == idx]
+            subword_locations.append((word_locs[0], word_locs[-1] + 1))
+        init += len(example_tokens)
+
+    return tokens, labels, filtered_preds, logits, subword_locations
 
 def find_subword_locations(tokens):
     """Finds the starting and ending index of words that have been broken into subwords"""
