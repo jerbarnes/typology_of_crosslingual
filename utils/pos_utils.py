@@ -1,23 +1,8 @@
 import glob
 import numpy as np
 import pandas as pd
-import sys
 import tensorflow.keras.backend as K
-sys.path.append("..")
-from data_preparation.data_preparation_pos import convert_examples_to_tf_dataset, read_conll
 
-def load_data(path, batch_size, tokenizer, tagset, max_length, dataset_name="test"):
-    """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
-    test_data = read_conll(glob.glob(path + "/*-{}.conllu".format(dataset_name))[0])
-    test_examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(test_data[0],
-                                                                                                      test_data[1],
-                                                                                                      test_data[2])]
-    # In case some example is over max length
-    test_examples = [example for example in test_examples if len(tokenizer.subword_tokenize(example["tokens"],
-                                                                                            example["tags"])[0]) <= max_length]
-    test_dataset = convert_examples_to_tf_dataset(examples=test_examples, tokenizer=tokenizer, tagset=tagset, max_length=max_length)
-    test_dataset = test_dataset.batch(batch_size)
-    return test_examples, test_dataset
 
 def filter_padding_tokens(test_examples, preds, label_map, tokenizer):
     """Filters padding tokens, labels, predictions and logits, then returns these as flattened lists, along with subword locations"""
