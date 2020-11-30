@@ -5,10 +5,10 @@ The idea is to explore the effect of morphological typology (fusional, isolating
 
 Languages
 ----
-- Fusional: Bulgarian (bl), Croatian (hr), English (en), Russian (ru), Slovak (sl)
-- Isolating: Chinese (zh), Vietnamese (vi), Thai (th)
+- Fusional: Bulgarian (bl), Croatian (hr), English (en), Russian (ru), Slovak (sl), German (de), Spanish (es), Norwegian (no), Greek (el)
+- Isolating: Chinese (zh), Vietnamese (vi), Thai (th), Cantonese (zh-yue), Bahasa Indonesia (id)
 - Agglutinative: Basque (eu), Finnish (fi), Japanese (ja), Korean (ko), Turkish (tr)
-- Introflexive: Modern Standard Arabic (ar), Hebrew (he)
+- Introflexive: Modern Standard Arabic (ar), Hebrew (he), Algerian (ar-dz), Maltese (mt)
 
 
 Data
