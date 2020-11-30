@@ -288,9 +288,10 @@ class Trainer:
             self.history.plot()
 
     def make_definitive(self):
-        for file in [self.checkpoint_filepath, self.history.logs_file,
-                     self.history.checkpoint_params_file, self.checkpoint_report_file]:
-            os.replace(file, file.remove("_checkpoint", ""))
+        for file in [self.checkpoint_filepath, self.history.logs_filepath,
+                     self.history.checkpoint_params_filepath, self.checkpoint_report_filepath]:
+            os.replace(file, file.replace("_checkpoint", ""))
+            os.replace(file, file.replace(self.suffix, ""))
 
     def get_main_params(self):
         include = ["training_lang", "data_path", "task", "use_class_weights",
@@ -323,6 +324,7 @@ class History:
         self.start_epoch = 0
         self.best_dev_score = 0
         self.best_dev_epoch = None
+        self.best_dev_total_time = None
 
         # Other
         self.task = trainer.task
@@ -338,7 +340,7 @@ class History:
         self.loss_list = log["loss"].values[:end_index].tolist()
         self.train_score_list = log["train_score"].values[:end_index].tolist()
         self.dev_score_list = log["dev_score"][:end_index].values.tolist()
-        self.total_time_list = log["total_time"]
+        self.total_time_list = log["total_time"][:end_index].values.tolist()
         self.best_dev_score = self.dev_score_list[-1]
         self.best_dev_epoch = self.epoch_list[-1]
         self.start_epoch = self.epoch_list[-1] + 1
@@ -350,10 +352,15 @@ class History:
     def update_best_dev_score(self, train_score, dev_score, epoch, epoch_duration, dev_preds):
         self.best_dev_score = dev_score
         self.best_dev_epoch = epoch
+        if self.total_time_list:
+            new_time = self.total_time_list[-1] + epoch_duration
+        else:
+            new_time = epoch_duration
+        self.best_dev_total_time = self.convert_time(new_time)
         # Parameters with which the score was obtained
         params = {**self.trainer_params,
                   **{"epoch": epoch, "train_score": train_score, "dev_score": dev_score,
-                     "total_training_time": self.convert_time(sum(self.total_time_list) + epoch_duration)}}
+                     "total_training_time": self.best_dev_total_time}}
         pd.DataFrame(params.items(), columns=["Variable", "Value"]).to_excel(
             self.checkpoint_params_filepath, index=False
         )
@@ -370,7 +377,11 @@ class History:
         self.loss_list.append(loss)
         self.train_score_list.append(train_score)
         self.dev_score_list.append(dev_score)
-        self.total_time_list.append(sum(self.total_time_list) + epoch_duration)
+        if self.total_time_list:
+            new_time = self.total_time_list[-1] + epoch_duration
+        else:
+            new_time = epoch_duration
+        self.total_time_list.append(new_time)
 
         pd.DataFrame({"epoch": self.epoch_list,
                       "loss": self.loss_list,
@@ -411,3 +422,7 @@ class History:
         sns.despine()
         plt.show()
         plt.close()
+
+    def get_best_dev(self):
+        """Score, epoch, time"""
+        return self.best_dev_score, self.best_dev_epoch, self.best_dev_total_time
