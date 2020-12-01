@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import glob
 import re
 from tqdm.notebook import tqdm
@@ -99,3 +100,37 @@ def add_lang_groups(table, colname="group"):
     lang_colname = find_lang_column(table)
     table.insert(loc=0, column=colname, value=table[lang_colname].map(lang_to_group))
     return table
+
+def find_table(r, task="", by="colname"):
+    possible_tasks = ["", "pos", "sentiment"]
+    possible_by = ["colname", "path"]
+    assert task in possible_tasks, "Task must be one of " + str(possible_tasks)
+    assert by in possible_by, "'by' must be one of " + str(possible_by)
+    all_colnames = pd.read_csv(Path(__file__).parent / "../utils/all_colnames.tsv", sep="\t")
+
+    r = re.compile(r)
+    matches = list(filter(r.match, all_colnames.loc[all_colnames["path"].apply(lambda x: task in x), by]))
+    if len(matches) == 0:
+        raise Exception("No match.")
+    if by == "colname":
+        paths = all_colnames.loc[all_colnames["path"].apply(lambda x: task in x) & all_colnames["colname"].isin(matches), "path"].values
+        if len(paths) == 0:
+            raise Exception("No match.")
+        print("\nMatched pairs: ", *enumerate(zip(paths, matches)), sep="\n")
+        i = int(input("Choose pair: "))
+        path = paths[i]
+        colname = matches[i]
+    else:
+        print("\nMatched paths", *enumerate(np.unique(matches)), sep="\n")
+        i = int(input("Choose path: "))
+        path = matches[i]
+        cols = pd.read_excel(path).columns
+        print("\nPossible columns", *enumerate(pd.read_excel(path).columns), sep="\n")
+        i = int(input("Choose column: "))
+        colname = cols[i]
+    return path, colname
+
+def get_langs(experiment):
+    assert experiment in ["tfm", "acl"], "Only possible experiments are 'tfm' and 'acl'"
+    file_path = Path(__file__).parent / "{}_langs.tsv".format(experiment)
+    return pd.read_csv(file_path, sep="\t", header=None).values.flatten().tolist()
