@@ -302,7 +302,7 @@ class Trainer:
 class History:
     def __init__(self, trainer):
         # Dirs and files
-        self.logs_dir = trainer.checkpoint_dir + "/logs/"
+        self.logs_dir = trainer.checkpoint_dir + "logs/"
         self.log_filepath = self.logs_dir + "{}_{}_checkpoint_log{}.xlsx".format(trainer.model_name,
                                                                                  trainer.task,
                                                                                  trainer.suffix)
@@ -313,7 +313,7 @@ class History:
                                                                                                   trainer.task,
                                                                                                   trainer.suffix)
         if not os.path.isdir(self.logs_dir):
-            os.makedirs(checkpoint_dir + "logs/")
+            os.makedirs(self.logs_dir)
 
         # History attributes
         self.epoch_list = []
