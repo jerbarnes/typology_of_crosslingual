@@ -1,6 +1,8 @@
 from transformers import BertTokenizer, XLMRobertaTokenizer
 from transformers.data.processors.utils import InputFeatures
 import tensorflow as tf
+import logging
+import glob
 
 def read_conll(input_file):
         """Reads a conllu file."""
@@ -67,15 +69,10 @@ class XLMR_Tokenizer(XLMRobertaTokenizer):
                 idx_map.append(ix)
         return split_tokens, split_labels, idx_map
 
-def convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
+def bert_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
     features = [] # -> will hold InputFeatures to be converted later
 
     for e in examples:
-#         tokens = [token["form"] for token in e] # Obtain list of tokens
-#         labels = [token["upos"] for token in e] # Obtain list of labels
-#         tokens = [token.form for token in e]
-#         labels = [token.upos for token in e]
-
         tokens = e["tokens"]
         labels = e["tags"]
         label_map = {label: i for i, label in enumerate(tagset)} # Tags to indexes
@@ -126,3 +123,70 @@ def convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
             tf.TensorShape([None]),
         ),
     )
+
+def roberta_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
+    features = [] # -> will hold InputFeatures to be converted later
+
+    for e in examples:
+        tokens = e["tokens"]
+        labels = e["tags"]
+        label_map = {label: i for i, label in enumerate(tagset)} # Tags to indexes
+
+        # Tokenize subwords and propagate labels
+        split_tokens, split_labels, idx_map = tokenizer.subword_tokenize(tokens, labels)
+
+        # Create features
+        input_ids = tokenizer.convert_tokens_to_ids(split_tokens)
+        attention_mask = [1] * len(input_ids)
+        label_ids = [label_map[label] for label in split_labels]
+
+        padding = [0] * (max_length - len(input_ids))
+        input_ids += padding
+        attention_mask += padding
+        label_ids += padding
+
+        features.append(
+            InputFeatures(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                label=label_ids
+            )
+        )
+
+    def gen():
+        for f in features:
+            yield (
+                {
+                    "input_ids": f.input_ids,
+                    "attention_mask": f.attention_mask,
+                },
+                f.label,
+            )
+
+    return tf.data.Dataset.from_generator(
+        gen,
+        ({"input_ids": tf.int32, "attention_mask": tf.int32}, tf.int64),
+        (
+            {
+                "input_ids": tf.TensorShape([None]),
+                "attention_mask": tf.TensorShape([None]),
+            },
+            tf.TensorShape([None]),
+        ),
+    )
+
+def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dataset_name="test"):
+    """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
+    logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
+    convert_functions = {"mbert": bert_convert_examples_to_tf_dataset,
+                         "xlm-roberta": roberta_convert_examples_to_tf_dataset}
+    data = read_conll(glob.glob(lang_path + "/*-{}.conllu".format(dataset_name.split("_")[0]))[0])
+    examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(data[0],
+                                                                                                 data[1],
+                                                                                                 data[2])]
+    # In case some example is over max length
+    examples = [example for example in examples if len(tokenizer.subword_tokenize(example["tokens"],
+                                                                                  example["tags"])[0]) <= max_length]
+    dataset = convert_functions[short_model_name](examples=examples, tokenizer=tokenizer,
+                                                  tagset=tagset, max_length=max_length)
+    return examples, dataset
