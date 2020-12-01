@@ -1,0 +1,4 @@
+    "Fusional": "#c8ffc8",
+    "Agglutinative": "#c8c8ff",
+    "Isolating": "#ffc8c8",
+    "Introflexive": "#fff0f0"
