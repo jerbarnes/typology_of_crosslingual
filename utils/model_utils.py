@@ -52,7 +52,10 @@ def get_full_model_names(short_model_name):
 def create_model(short_model_name, task, num_labels):
     return (models[short_model_name][task](get_full_model_names(short_model_name)[1],
                                           num_labels=num_labels),
-            tokenizers[short_model_name][task](get_full_model_names(short_model_name)[1]))
+            get_tokenizer(short_model_name, task))
+
+def get_tokenizer(short_model_name, task):
+    return tokenizers[short_model_name][task](get_full_model_names(short_model_name)[1])
 
 def compile_model(model, task, learning_rate):
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
