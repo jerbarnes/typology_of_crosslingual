@@ -12,43 +12,31 @@ def make_lang_code_dicts():
             "name_to_code": pd.Series(lang_codes["ISO 639-1 Code"].values,index=lang_codes["English name of Language"]).to_dict()}
 
 def make_lang_group_dict():
-    file_path = Path(__file__).parent / "../data_exploration/pos_table.txt"
-    file = open(file_path, "r")
-    lang_to_group = {}
-    for line in file.readlines():
-        group_latex = line.split("&")[0].strip()
-        lang = line.split("&")[1].strip()
-        match = re.search("{(.*)}", group_latex)
-        lang_to_group[lang] = match.group(1)
-    return lang_to_group
+    file_path = Path(__file__).parent / "../utils/lang_groups.xlsx"
+    return pd.read_excel(file_path).set_index("Language").to_dict()["Group"]
 
-def order_table(table):
+def order_table(table, experiment):
+    assert experiment in ["tfm", "acl"], "Invalid experiment, must be 'tfm' or 'acl'"
     # Make sure the path is correct even when importing this function from somewhere else
-    file_path = Path(__file__).parent / "../data_exploration/pos_table.txt"
-    file = open(file_path, "r")
+    file_path = Path(__file__).parent / "../utils/{}_langs.tsv".format(experiment)
+    all_langs = pd.read_csv(file_path, sep="\t", header=None).values.flatten()
     lang_colname = find_lang_column(table)
-    current_langs = table[lang_colname].values
-    lang_order = []
-    for line in file.readlines():
-        lang = line.split("&")[1].strip()
-        if lang in current_langs: # Not all languages need to be present
-            lang_order.append(lang)
+    lang_order = [lang for lang in all_langs if lang in table[lang_colname].values]
     if isinstance(table.columns, pd.MultiIndex): # Check for hierarchical columns
         level = 0
     else:
         level = None
-    table.insert(0, "sort", table[lang_colname].apply(lambda x: lang_order.index(x)))
-    table = table.sort_values(by=["sort"]).drop("sort", axis=1, level=level).reset_index(drop=True)
-    return table
+    new_table = table.copy() # Make a copy so the original does not get modified
+    new_table.insert(0, "sort", table[lang_colname].apply(lambda x: lang_order.index(x)))
+    new_table = new_table.sort_values(by=["sort"]).drop("sort", axis=1, level=level).reset_index(drop=True)
+    return new_table
 
-def convert_table_to_latex(table):
-    table = order_table(table) # In case it's not already in correct order
+def convert_table_to_latex(table, experiment):
+    assert experiment in ["tfm", "acl"], "Invalid experiment, must be 'tfm' or 'acl'"
+    table = order_table(table, experiment) # In case it's not already in correct order
 
     # Retrieve language groups in correct order and add them to table
-    file_path = Path(__file__).parent / "../data_exploration/pos_table.txt"
-    file = open(file_path, "r")
-    lang_groups = [line.split("&")[0].strip() for line in file.readlines()]
-    table.insert(loc=0, column="group", value=lang_groups)
+    table = add_lang_groups(table, "group")
 
     # Latex output
     print("\n".join([" & ".join(line) + r"\\" for line in table.astype(str).values]))
@@ -93,8 +81,6 @@ def find_lang_column(table):
         return None
 
 def add_lang_groups(table, colname="group"):
-    table = order_table(table) # In case it's not already in correct order
-
     # Retrieve language groups in correct order and add them to table in human readable format
     lang_to_group = make_lang_group_dict()
     lang_colname = find_lang_column(table)
