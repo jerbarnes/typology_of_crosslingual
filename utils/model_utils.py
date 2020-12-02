@@ -30,11 +30,6 @@ tokenizers = {
     }
 }
 
-losses = {
-    "pos": ignore_acc,
-    "sentiment": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-}
-
 def set_tf_memory_growth():
     gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpu_devices[0], True)
@@ -61,7 +56,7 @@ def create_model(short_model_name, task, num_labels):
 
 def compile_model(model, task, learning_rate):
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-    loss = losses[task]
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     model.compile(optimizer=optimizer, loss=loss)
     return model
 
