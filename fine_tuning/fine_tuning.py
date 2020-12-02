@@ -288,7 +288,7 @@ class Trainer:
             self.history.plot()
 
     def make_definitive(self):
-        for file in [self.checkpoint_filepath, self.history.logs_filepath,
+        for file in [self.checkpoint_filepath, self.history.log_filepath,
                      self.history.checkpoint_params_filepath, self.checkpoint_report_filepath]:
             os.replace(file, file.replace("_checkpoint", ""))
             os.replace(file, file.replace(self.suffix, ""))
