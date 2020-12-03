@@ -288,10 +288,12 @@ class Trainer:
             self.history.plot()
 
     def make_definitive(self):
-        for file in [self.checkpoint_filepath, self.history.log_filepath,
-                     self.history.checkpoint_params_filepath, self.history.checkpoint_report_filepath]:
-            os.replace(file, file.replace("_checkpoint", ""))
-            os.replace(file, file.replace(self.suffix, ""))
+        rename_files = [self.checkpoint_filepath, self.history.log_filepath,
+                        self.history.checkpoint_params_filepath]
+        if self.task == "sentiment":
+            rename_files.append(self.history.checkpoint_report_filepath)
+        for file in rename_files:
+            os.replace(file, file.replace("_checkpoint", "").replace(self.suffix, ""))
 
     def get_main_params(self):
         include = ["training_lang", "data_path", "task", "use_class_weights",
