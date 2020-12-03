@@ -292,11 +292,7 @@ class Trainer:
                         self.history.checkpoint_params_filepath]
         if self.task == "sentiment":
             rename_files.append(self.history.checkpoint_report_filepath)
-<<<<<<< HEAD
         for file in rename_files:
-=======
-        for file in :
->>>>>>> 7968f106ca73f17112148a9f88d989fcbbc2254f
             os.replace(file, file.replace("_checkpoint", "").replace(self.suffix, ""))
 
     def get_main_params(self):
