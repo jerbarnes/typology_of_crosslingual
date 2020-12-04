@@ -180,7 +180,7 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dat
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
     convert_functions = {"mbert": bert_convert_examples_to_tf_dataset,
                          "xlm-roberta": roberta_convert_examples_to_tf_dataset}
-    data = read_conll(glob.glob(lang_path + "/*-{}.conllu".format(dataset_name.split("_")[0]))[0])
+    data = read_conll(glob.glob(lang_path + "/*{}.conllu".format(dataset_name.split("_")[0]))[0])
     examples = [{"id": sent_id, "tokens": tokens, "tags": tags} for sent_id, tokens, tags in zip(data[0],
                                                                                                  data[1],
                                                                                                  data[2])]
@@ -190,3 +190,4 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dat
     dataset = convert_functions[short_model_name](examples=examples, tokenizer=tokenizer,
                                                   tagset=tagset, max_length=max_length)
     return examples, dataset
+    # This loops 3 times over the same data, including the convert to TF, could it be done in one?
