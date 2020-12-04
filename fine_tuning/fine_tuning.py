@@ -212,7 +212,7 @@ class Trainer:
     def show_time(self, epoch):
         elapsed = time.time() - self.start_time
         print("{:<25}{:<25}".format("Elapsed:", str(timedelta(seconds=np.round(elapsed)))))
-        remaining = elapsed / (epoch + 1 - self.history.start_epoch) * (self.epochs + self.history.start_epoch - (epoch - 1))
+        remaining = elapsed / (epoch + 1 - self.history.start_epoch) * (self.epochs + self.history.start_epoch - (epoch + 1))
         print("{:<25}{:<25}".format("Estimated remaining:", str(timedelta(seconds=np.round(remaining)))))
         return elapsed, remaining
 
