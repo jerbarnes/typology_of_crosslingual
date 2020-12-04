@@ -47,12 +47,10 @@ def find_subword_locations(tokens):
 
     return subword_locations
 
-def reconstruct_subwords(subword_locations, tokens, labels, filtered_preds, logits):
+def reconstruct_subwords(subword_locations, filtered_preds, logits):
     """Assemble subwords back into the original word in the global lists of tokens, labels and predictions,
     and select a predicted tag"""
-    new_tokens = []
     new_preds = []
-    new_labels = []
     prev_end = 0
 
     for start, end in subword_locations:
@@ -63,17 +61,12 @@ def reconstruct_subwords(subword_locations, tokens, labels, filtered_preds, logi
         else:
             prediction = filtered_preds[start]
         new_preds += filtered_preds[prev_end:start] + [prediction]
-        token = "".join(tokens[start:end]).replace("##", "")
-        new_tokens += tokens[prev_end:start] + [token]
-        new_labels += labels[prev_end:start] + [labels[start]]
         prev_end = end
 
     # Last subword onwards
     new_preds += filtered_preds[prev_end:]
-    new_tokens += tokens[prev_end:]
-    new_labels += labels[prev_end:]
 
-    return new_tokens, new_labels, new_preds
+    return new_preds
 
 def ignore_acc(y_true_class, y_pred_class, class_to_ignore=0):
     y_pred_class = K.cast(K.argmax(y_pred_class, axis=-1), 'int32')

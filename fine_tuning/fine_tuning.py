@@ -96,6 +96,8 @@ class Trainer:
         self.data_path = data_path
         self.lang_path = data_path + training_lang + "/"
         self.task = task
+        if self.task == "pos":
+            self.eval_info = {}
         self.metric = score_functions[task]
         self.use_class_weights = use_class_weights
         self.class_weights = None
@@ -139,6 +141,32 @@ class Trainer:
         self.temp_weights_filepath = self.checkpoint_dir + self.model_name + "_temp.hdf5"
         print("Temp weights file:", self.temp_weights_filepath)
 
+    def setup_eval(self, data, dataset_name):
+        self.eval_info[dataset_name] = {}
+        self.eval_info[dataset_name]["all_words"] = []
+        self.eval_info[dataset_name]["all_labels"] = []
+        self.eval_info[dataset_name]["real_tokens"] = []
+        self.eval_info[dataset_name]["subword_locs"] = []
+        acc_lengths = 0
+
+        for i in range(len(data)):
+            self.eval_info[dataset_name]["all_words"].extend(data[i]["tokens"]) # Full words
+            self.eval_info[dataset_name]["all_labels"].extend([self.label_map[label] for label in data[i]["tags"]])
+            _, _, idx_map = self.tokenizer.subword_tokenize(data[i]["tokens"], data[i]["tags"])
+
+            # Examples always start at a multiple of max_length
+            # Where they end depends on the number of resulting subwords
+            example_start = i * self.max_length
+            example_end = example_start + len(idx_map)
+            self.eval_info[dataset_name]["real_tokens"].extend(np.arange(example_start, example_end, dtype=int))
+
+            # Get subword starts and ends
+            sub_ids, sub_starts, sub_lengths = np.unique(idx_map, return_counts=True, return_index=True)
+            sub_starts = sub_starts[sub_lengths > 1] + acc_lengths
+            sub_ends = sub_starts + sub_lengths[sub_lengths > 1]
+            self.eval_info[dataset_name]["subword_locs"].extend(np.array([sub_starts, sub_ends]).T.tolist())
+            acc_lengths += len(idx_map)
+
     def prepare_data(self, limit=None):
         datasets = {}
         dataset_names = ["train", "dev", "train_eval"]
@@ -150,6 +178,8 @@ class Trainer:
                     self.lang_path, self.tokenizer, self.max_length, self.short_model_name,
                     tagset=self.tagset, dataset_name=dataset_name
                 )
+                if dataset_name != "train":
+                    self.setup_eval(data, dataset_name)
             elif self.task == "sentiment":
                 if self.use_class_weights:
                     balanced = False
@@ -223,19 +253,18 @@ class Trainer:
         bar.refresh()
         #tqdm.write("") # So the bar appears
 
-    def get_score_pos(self, preds, data):
-        (tokens, labels, filtered_preds, logits,
-        subword_locations) = pos_utils.filter_padding_tokens(data,
-                                                             preds,
-                                                             self.label_map,
-                                                             self.tokenizer)
-        new_tokens, new_labels, new_preds = pos_utils.reconstruct_subwords(
-            subword_locations, tokens, labels, filtered_preds, logits
+    def get_score_pos(self, preds, data, dataset_name):
+        filtered_preds = preds[0].argmax(axis=-1).flatten()[self.eval_info[dataset_name]["real_tokens"]].tolist()
+        filtered_logits = preds[0].reshape(
+            (preds[0].shape[0]*preds[0].shape[1], preds[0].shape[2])
+        )[self.eval_info[dataset_name]["real_tokens"]]
+        new_preds = pos_utils.reconstruct_subwords(
+            self.eval_info[dataset_name]["subword_locs"], filtered_preds, filtered_logits
         )
 
-        return (np.array(new_labels) == np.array(new_preds)).mean()
+        return (np.array(self.eval_info[dataset_name]["all_labels"]) == np.array(new_preds)).mean()
 
-    def get_score_sentiment(self, preds, data):
+    def get_score_sentiment(self, preds, data, dataset_name=None):
         return f1_score(data["sentiment"].values, preds[0].argmax(axis=-1),
                         average="macro", zero_division=0)
 
@@ -275,8 +304,8 @@ class Trainer:
             epoch_duration = time.time() - epoch_start
 
             # Calculate scores
-            train_score = self.metric(train_preds, self.train_eval_data)
-            dev_score = self.metric(dev_preds, self.dev_data)
+            train_score = self.metric(train_preds, self.train_eval_data, "train_eval")
+            dev_score = self.metric(dev_preds, self.dev_data, "dev")
             if dev_score > self.history.best_dev_score:
                 self.save_checkpoint(dev_score)
                 self.history.update_best_dev_score(train_score, dev_score,
