@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 import tensorflow as tf
+import itertools
 from datetime import timedelta
 from sklearn.metrics import classification_report, f1_score
 from IPython.display import clear_output
@@ -32,6 +33,34 @@ def is_trainable(lang, data_path, task):
             return False
     return True
 
+def is_trained(lang, model_name, task, checkpoints_path):
+    code_dicts = utils.make_lang_code_dicts()
+    code_to_name = code_dicts["code_to_name"]
+    name_to_code = code_dicts["name_to_code"]
+
+    if glob.glob(checkpoints_path + "{}/{}_{}.hdf5".format(name_to_code[lang], model_name, task)):
+        return True
+    else:
+        return False
+
+def sort_langs_by_status(model_name, task, data_path, checkpoints_path, all_langs, excluded=[]):
+    trained_langs = []
+    cannot_train_langs = []
+    remaining_langs = []
+    for lang in all_langs:
+        if lang in excluded:
+            continue
+        # Check if there are train and dev sets available
+        elif is_trainable(lang, data_path, task):
+            if is_trained(lang, model_name, task, checkpoints_path):
+                trained_langs.append(lang)
+            else:
+                remaining_langs.append(lang)
+        else:
+            cannot_train_langs.append(lang)
+
+    return trained_langs, cannot_train_langs, remaining_langs
+
 def get_global_training_state(data_path, short_model_name, experiment, checkpoints_path):
     code_dicts = utils.make_lang_code_dicts()
     code_to_name = code_dicts["code_to_name"]
@@ -53,20 +82,10 @@ def get_global_training_state(data_path, short_model_name, experiment, checkpoin
         excluded = ["Turkish", "Japanese", "Russian"]
     else:
         excluded = []
-    trained_langs = []
-    cannot_train_langs = []
-    remaining_langs = []
-    for lang in all_langs:
-        if lang in excluded:
-            continue
-        # Check if there are train and dev sets available
-        elif is_trainable(lang, data_path, task):
-            if glob.glob(checkpoints_path + "{}/{}_{}.hdf5".format(name_to_code[lang], model_name, task)):
-                trained_langs.append(lang)
-            else:
-                remaining_langs.append(lang)
-        else:
-            cannot_train_langs.append(lang)
+    trained_langs, cannot_train_langs, remaining_langs = sort_langs_by_status(
+        model_name, task, data_path, checkpoints_path, all_langs, excluded
+    )
+
 
     # Print status
     if remaining_langs:
@@ -87,6 +106,58 @@ def get_global_training_state(data_path, short_model_name, experiment, checkpoin
             training_lang = name_to_code[training_lang]
 
     return training_lang
+
+def get_global_experiment_state(experiment, general_data_path, checkpoints_path, print_state=True, return_state=False):
+    assert experiment in ["tfm", "acl"], "Only possible experiments are 'tfm' and 'acl'"
+    langs = utils.get_langs(experiment)
+    state = {}
+    data_paths = {"pos": general_data_path + "ud/", "sentiment": general_data_path + "sentiment/"}
+    models = ["mbert", "xlm-roberta"]
+    models_print = ["M-BERT", "XLM-Roberta"]
+    num_trained = {}
+    num_trainable = {}
+
+    if print_state:
+        # Print table headers
+        tab = "{:<15}".format("")
+        header = tab + ("|{:^19}" * (len(models) + 1)).format("Trainable", *models_print) + "|"
+        print(header)
+        subheader = tab + "|{:^9}{:^10}".format("PoS", "Sentiment") * (len(models) + 1) + "|"
+        print(subheader)
+        print("{:<15}{:-^61}".format("", ""))
+
+    for lang in langs:
+        state[lang] = {}
+        for task in ["pos", "sentiment"]:
+            data_path = data_paths[task]
+            trainable = is_trainable(lang, data_path, task)
+            state[lang]["trainable_" + task] = trainable
+            if trainable:
+                num_trainable[task] = num_trainable.get(task, 0) + 1
+            for model in models:
+                model_name, full_model_name = model_utils.get_full_model_names(model)
+                trained = is_trained(lang, model_name, task, checkpoints_path)
+                key = "{}_{}".format(model, task)
+                state[lang][key] = trained
+                if trained:
+                    num_trained[key] = num_trained.get(key, 0) + 1
+        if print_state:
+            lang_state = ["x" if state[lang]["_".join(x)] else "" for x in itertools.product(
+                ["trainable"] + models, ["pos", "sentiment"]
+            )]
+            print("{:<15}".format(lang) + ("|{:^9}{:^10}" * (len(models) + 1)).format(*lang_state) + "|")
+    if print_state:
+        print("\n")
+        for k, v in num_trained.items():
+            model, task = k.split("_")
+            print("- \033[1m{}\033[0m with model \033[1m{}\033[0m is \033[1m{:.1f}%\033[0m done".format(task.capitalize(),
+                                                              models_print[models.index(model)],
+                                                              v / num_trainable[task] * 100))
+        progress = sum(num_trained.values()) / (len(models) * sum(num_trainable.values())) * 100
+        print("\n\033[1m{}\033[0m experiment is \033[1m{:.1f}%\033[0m done".format(experiment.upper(), progress))
+
+    if return_state:
+        return pd.DataFrame(state).T.astype(int)
 
 class Trainer:
     def __init__(self, training_lang, data_path, task, short_model_name, use_class_weights=False):
