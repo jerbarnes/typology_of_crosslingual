@@ -344,6 +344,16 @@ class Trainer:
               ",\nsaving to " + self.checkpoint_filepath)
         self.model.save_weights(self.checkpoint_filepath)
 
+    def manual_predict(self, data, batch_size):
+        preds = []
+        for i in tqdm(range(0, len(data), batch_size)):
+            dataset = data_preparation_pos.bert_convert_examples_to_tf_dataset(
+                data[i:i+batch_size], self.tokenizer, self.tagset, self.max_length
+            )
+            dataset, batches = model_utils.make_batches(dataset, batch_size, repetitions=1, shuffle=False)
+            preds.extend(self.model.predict(dataset, steps=batches)[0])
+        return (np.array(preds),) # For consistency
+
     def train(self):
         if self.use_class_weights and not self.class_weights:
             print("Calculating class weights")
@@ -363,8 +373,13 @@ class Trainer:
             loss = hist.history["loss"][0]
             print("Saving temp weights...")
             self.model.save_weights(self.temp_weights_filepath)
-            train_preds = self.handle_oom(self.model.predict, self.train_eval_dataset,
-                                          steps=self.train_eval_batches, verbose=1)
+            if len(self.train_eval_data) < 1e5:
+                train_preds = self.handle_oom(self.model.predict, self.train_eval_dataset,
+                                              steps=self.train_eval_batches, verbose=1)
+            else:
+                # If train data is large, TF predict will always run out of memory
+                train_preds = self.handle_oom(self.manual_predict, self.train_eval_data,
+                                              batch_size=self.eval_batch_size)
             dev_preds = self.handle_oom(self.model.predict, self.dev_dataset,
                                         steps=self.dev_batches, verbose=1)
 
