@@ -19892,6 +19892,6 @@
 # sent_id = 24-49
 # text = 3ayechtini f'doute
 # trad_fr = Tu m'as fait vivre dans le doute
-1	عيشتني	3ayechtini	VERB+PRON	V2ms+CLO	Gender=Masc|Number=Sing|Person=2	0	root	_	_
-2	ف دوت	f'doute	ADP+NOUN	P+NC	AdpType=Prep	1	obl	_	_
+1	عيشتني	3ayechtini	VERB	V2ms+CLO	Gender=Masc|Number=Sing|Person=2	0	root	_	_
+2	ف دوت	f'doute	NOUN	P+NC	AdpType=Prep	1	obl	_	_
 

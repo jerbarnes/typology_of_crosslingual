@@ -115,12 +115,12 @@
 # sent_id = 4435
 # text = matenssawech ahna ysamona mouloudia doran 3adna 08mlayne suporters ya elgalites mco t3al3a w rabi ekbir lakhatar les grands clubs jamais ymoutou ahna adina 3 coupes d
 # trad_fr = n'oubliez pas nous ils nous appellent Mouloudia d'Oran nous avons 8 millions supporteurs oh égalités le MCO montée et que Dieu grand pour raison les grands clubs jamais meurrent nous nous avons pris 3 coupes d'
-1	ماتنساوش	matenssawech	PART+VERB	PART-NEG+V	Polarity=Neg	0	root	_	lang=ar_dz|ComposedUDPOS=PART+VERB
+1	ماتنساوش	matenssawech	VERB	PART-NEG+V	Polarity=Neg	0	root	_	lang=ar_dz|ComposedUDPOS=PART+VERB
 2	حنا	ahna	PRON	CLS-SUJ	_	3	nsubj	_	lang=ar_dz|ComposedUDPOS=PRON
 3	يسمونا	ysamona	VERB	V3ms+CLO	Gender=Masc|Number=Sing|Person=3	1	ccomp	_	lang=ar_dz|ComposedUDPOS=VERB+PRON
 4	مولودية	mouloudia	PROPN	NPP	_	3	obj	_	lang=fr|ComposedUDPOS=PROPN
 5	وهران	doran	PROPN	P+NPP	AdpType=Prep	4	nmod	_	lang=fr|ComposedUDPOS=ADP+PROPN
-6	عندنا	3adna	ADP+PRON	P+PRO	AdpType=Prep	7	nsubj	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+6	عندنا	3adna	PRON	P+PRO	AdpType=Prep	7	nsubj	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
 7	8  ملاين 	08mlayne	NOUN	DET+NC	_	1	parataxis	_	lang=ar_dz|ComposedUDPOS=DET+NOUN
 8	سيبورتور	suporters	NOUN	NC	_	7	nmod	_	lang=fr|ComposedUDPOS=NOUN
 9	يا	ya	INTJ	CLS-SUJ+CLO-OBJ+V	_	10	discourse	_	lang=ar_dz|ComposedUDPOS=PRON+PRON+VERB
@@ -153,12 +153,12 @@
 5	يا	ya	INTJ	VOC	_	6	discourse	_	SpaceAfter=No|lang=ar_dz|ComposedUDPOS=INTJ
 6	ربي	rabi	NOUN	NC+POSS	Possessive=Yes	7	vocative	_	lang=ar_dz|ComposedUDPOS=NOUN+PRON
 7	كون	kon	VERB	VIMP	Mood=Imp	2	parataxis	_	lang=ar_dz|ComposedUDPOS=VERB
-8	معانا	m3ana	ADP+PRON	P+PRO	AdpType=Prep	7	iobj	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+8	معانا	m3ana	PRON	P+PRO	AdpType=Prep	7	iobj	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
 
 # sent_id = 2452
 # text = m3ak ya sadaane le grand de oum dermane hata lmamat
 # trad_fr = nous sommes avec toi oh Saadane le grand de Om Dourman jusqu'à la mort
-1	معاك	m3ak	ADP+PRON	P+PRO	AdpType=Prep	0	root	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+1	معاك	m3ak	PRON	P+PRO	AdpType=Prep	0	root	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
 2	يا	ya	INTJ	VOC	_	3	discourse	_	lang=ar_dz|ComposedUDPOS=INTJ
 3	سعدان	sadaane	PROPN	NPP	_	1	appos	_	lang=ar_dz|ComposedUDPOS=PROPN
 4	لو	le	DET	DET	_	5	det	_	lang=fr|ComposedUDPOS=DET
@@ -201,7 +201,7 @@
 11	و	wa	CCONJ	CC	_	12	cc	_	lang=ar_dz|ComposedUDPOS=CCONJ
 12	رانا	rana	VERB	V	_	1	parataxis	_	lang=ar_dz|ComposedUDPOS=VERB
 13	ڨاع	ga3	ADV	ADV	_	12	advmod	_	lang=ar_dz|ComposedUDPOS=ADV
-14	معاك	ma3ak	ADP+PRON	P+PRO	AdpType=Prep	12	obl	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+14	معاك	ma3ak	PRON	P+PRO	AdpType=Prep	12	obl	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
 15	123	123	INTJ	I	_	18	discourse	_	lang=en|ComposedUDPOS=INTJ
 16	فيف	vive	INTJ	I	_	15	fixed	_	lang=fr|ComposedUDPOS=INTJ
 17	ال	al	DET	DET	_	18	det	_	lang=ar_dz|ComposedUDPOS=DET
@@ -263,8 +263,8 @@
 # text = nasta3raf bihom bassah kribe intikhabat 3asso rohkom (les bomb) itartgokom yak mayhabouch l khir el lablade est vive boutaflika
 # trad_fr = et nous savons d'eux mais proche élections ils voient esprit votre (les bombes)  c'est ne pas aimer l' bien le le pays est vive Bouteflika
 1	نستعرف	nasta3raf	VERB	V	_	0	root	_	lang=ar_dz|ComposedUDPOS=VERB
-2	بيهم	bihom	ADP+PRON	P+PRO	AdpType=Prep	1	obl	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
-3	بصح	bassah	ADP+ADJ	P+ADJ	AdpType=Prep	5	amod	_	lang=ar_dz|ComposedUDPOS=ADP+ADJ
+2	بيهم	bihom	PRON	P+PRO	AdpType=Prep	1	obl	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+3	بصح	bassah	ADJ	P+ADJ	AdpType=Prep	5	amod	_	lang=ar_dz|ComposedUDPOS=ADP+ADJ
 4	قريب	kribe	ADJ	ADJ	_	5	amod	_	lang=ar_dz|ComposedUDPOS=ADJ
 5	انتخابات	intikhabat	NOUN	NC	_	6	nsubj	_	lang=ar_dz|ComposedUDPOS=NOUN
 6	عسو	3asso	VERB	V3mp	Gender=Masc|Number=Plur|Person=3	1	parataxis	_	lang=ar_dz|ComposedUDPOS=VERB
@@ -345,7 +345,7 @@
 1	شكون	CHkoune	ADV	ADVWH	_	3	advmod	_	lang=ar_dz|ComposedUDPOS=ADV
 2	لي	li	PRON	PROREL	PronType=Rel	3	nsubj	_	lang=ar_dz|ComposedUDPOS=PRON
 3	قالك	galek	VERB	V	_	0	root	_	lang=ar_dz|ComposedUDPOS=VERB
-4	ماعندناش	ma3andneche	PRO	PART-NEG+P+PRO	Polarity=Neg|AdpType=Prep	3	iobj	_	lang=ar_dz|ComposedUDPOS=PART+ADP+PRON
+4	ماعندناش	ma3andneche	PRON	PART-NEG+P+PRO	Polarity=Neg|AdpType=Prep	3	iobj	_	lang=ar_dz|ComposedUDPOS=PART+ADP+PRON
 5	لا	la	DET	DET	_	6	det	_	lang=fr|ComposedUDPOS=DET
 6	تاي	taille	NOUN	NC	_	3	obj	_	lang=fr|ComposedUDPOS=NOUN
 7	في	fi	ADP	P	AdpType=Prep	8	case	_	lang=ar_dz|ComposedUDPOS=ADP
@@ -596,7 +596,7 @@
 5	غادي	radi	ADJ	ADJ	_	1	parataxis	_	lang=ar_dz|ComposedUDPOS=ADJ
 6	تندم	tnadam	VERB	V3fs	Gender=Fem|Number=Plur|Person=3	5	xcomp	_	lang=ar_dz|ComposedUDPOS=VERB
 7	لحكاش	lahkach	CCONJ	CCONJ	_	9	mark	_	lang=ar_dz|ComposedUDPOS=X
-8	عند	3anda	ADP+PRON	P+PRO	AdpType=Prep	9	nmod	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
+8	عند	3anda	PRON	P+PRO	AdpType=Prep	9	nmod	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
 9	بيا	biya	NOUN	NC	_	6	advcl	_	lang=ar_dz|ComposedUDPOS=NOUN
 10	تحتية	tahtiya	ADJ	ADJ	_	9	amod	_	lang=ar_dz|ComposedUDPOS=ADJ
 
