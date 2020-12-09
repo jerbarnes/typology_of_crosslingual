@@ -1343,7 +1343,7 @@
 # sent_id = 5354
 # text = albarah khawetna 3andhom la chine et alyoum ahna et demain mana3ref chkon habo yaklo le monde c'est des tatar
 # trad_fr = hier nos frères chez eu la Chine et aujourd'hui nous et demain je sais pas qui ils veulent mangé le monde c'est des bâtard
-1-2		albarah	_	_	_	_	_	_	lang=ar_dz
+1-2	_	albarah	_	_	_	_	_	_	lang=ar_dz
 1	ال	al	DET	DET	_	2	det	_	SpaceAfter=No|lang=ar_dz|ComposedUDPOS=DET
 2	بارح	barah	NOUN	NC	_	3	nmod	_	lang=ar_dz|ComposedUDPOS=NOUN
 3	خاوتنا	khawetna	NOUN	NC+POSS	Possessive=Yes	13	parataxis	_	lang=ar_dz|ComposedUDPOS=NOUN+PRON
