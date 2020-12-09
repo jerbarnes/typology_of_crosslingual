@@ -24,23 +24,16 @@ metric_names = {"pos": "Accuracy", "sentiment": "Macro F1"}
 
 def is_trainable(lang, data_path, task):
     """Return True if the given language has training and validation data for the given task."""
-    code_dicts = utils.make_lang_code_dicts()
-    code_to_name = code_dicts["code_to_name"]
-    name_to_code = code_dicts["name_to_code"]
     extension = {"pos": "conllu", "sentiment": "csv"}
 
     for dataset in ["train", "dev"]:
-        if not glob.glob(data_path + name_to_code[lang] + "/*{}.{}".format(dataset, extension[task])):
+        if not glob.glob(data_path + utils.name_to_code[lang] + "/*{}.{}".format(dataset, extension[task])):
             return False
     return True
 
 def is_trained(lang, model_name, task, checkpoints_path):
     """Return True if the given language has been trained in the given task."""
-    code_dicts = utils.make_lang_code_dicts()
-    code_to_name = code_dicts["code_to_name"]
-    name_to_code = code_dicts["name_to_code"]
-
-    if glob.glob(checkpoints_path + "{}/{}_{}.hdf5".format(name_to_code[lang], model_name, task)):
+    if glob.glob(checkpoints_path + "{}/{}_{}.hdf5".format(utils.name_to_code[lang], model_name, task)):
         return True
     else:
         return False
@@ -67,10 +60,6 @@ def sort_langs_by_status(model_name, task, data_path, checkpoints_path, all_lang
 def get_global_training_state(data_path, short_model_name, experiment, checkpoints_path):
     """Print the training state of an experiment (languages trained, not yet trained, cannot be trained)
     and return the next language to be trained."""
-    code_dicts = utils.make_lang_code_dicts()
-    code_to_name = code_dicts["code_to_name"]
-    name_to_code = code_dicts["name_to_code"]
-
     # Infer task from data path
     if "sentiment" in data_path:
         task = "sentiment"
@@ -96,7 +85,7 @@ def get_global_training_state(data_path, short_model_name, experiment, checkpoin
     if remaining_langs:
         training_lang = remaining_langs[0]
         print("{:<20}".format("Training language:"), training_lang, "\n")
-        training_lang = name_to_code[training_lang]
+        training_lang = utils.name_to_code[training_lang]
         print(columnize(["Already trained:   "] + trained_langs, displaywidth=150))
         print(columnize(["Not yet trained:   "] + remaining_langs[1:], displaywidth=150))
         print(columnize(["Cannot train:      "] + cannot_train_langs, displaywidth=150))
@@ -108,7 +97,7 @@ def get_global_training_state(data_path, short_model_name, experiment, checkpoin
         if input("Retrain language? ") == "y":
             while training_lang not in all_langs:
                 training_lang = input("Language to re-train: ")
-            training_lang = name_to_code[training_lang]
+            training_lang = utils.name_to_code[training_lang]
 
     return training_lang
 
