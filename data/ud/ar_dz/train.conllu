@@ -13401,7 +13401,7 @@
 6	لا	la	DET	DET	_	7	det	_	lang=fr|ComposedUDPOS=DET
 7	فرانس	france	PROPN	NPP	_	8	nsubj	_	lang=fr|ComposedUDPOS=PROPN
 8	ايكوت	écoutes	VERB	V	_	1	parataxis	_	lang=fr|ComposedUDPOS=VERB
-9	سو	ce	PRO	PRON	_	8	obj	_	lang=fr|ComposedUDPOS=DET
+9	سو	ce	PRON	PRON	_	8	obj	_	lang=fr|ComposedUDPOS=DET
 10	كو	que	SCONJ	CS	_	11	mark	_	lang=fr|ComposedUDPOS=SCONJ
 11	فا	va	VERB	V	_	8	ccomp	_	lang=fr|ComposedUDPOS=VERB
 12	لوي	lui	PRON	PRO	_	13	nsubj	_	lang=fr|ComposedUDPOS=PRON
