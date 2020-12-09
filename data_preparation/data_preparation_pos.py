@@ -34,7 +34,20 @@ def read_conll(input_file):
         return ids, texts, tags
 
 class MBERT_Tokenizer(BertTokenizer):
+    """M-BERT tokenizer adapted for PoS tagging."""
     def subword_tokenize(self, tokens, labels):
+        """
+        Propagate tags through subwords.
+
+        Parameters:
+        tokens: List of word tokens.
+        labels: List of PoS tags.
+
+        Returns:
+        List of subword tokens.
+        List of propagated tags.
+        List of indexes mapping subwords to the original word.
+        """
         # This propogates the label over any subwords that
         # are created by the byte-pair tokenization for training
 
@@ -52,7 +65,20 @@ class MBERT_Tokenizer(BertTokenizer):
         return split_tokens, split_labels, idx_map
 
 class XLMR_Tokenizer(XLMRobertaTokenizer):
+    """XLM-Roberta tokenizer adapted for PoS tagging."""
     def subword_tokenize(self, tokens, labels):
+        """
+        Propagate tags through subwords.
+
+        Parameters:
+        tokens: List of word tokens.
+        labels: List of PoS tags.
+
+        Returns:
+        List of subword tokens.
+        List of propagated tags.
+        List of indexes mapping subwords to the original word.
+        """
         # This propogates the label over any subwords that
         # are created by the byte-pair tokenization for training
 
@@ -70,6 +96,7 @@ class XLMR_Tokenizer(XLMRobertaTokenizer):
         return split_tokens, split_labels, idx_map
 
 def bert_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
+    """Return a TF dataset adapted for M-BERT."""
     features = [] # -> will hold InputFeatures to be converted later
 
     for e in examples:
@@ -125,6 +152,7 @@ def bert_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length)
     )
 
 def roberta_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_length):
+    """Return a TF dataset adapted for XLM-Roberta."""
     features = [] # -> will hold InputFeatures to be converted later
 
     for e in examples:
@@ -176,8 +204,8 @@ def roberta_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_leng
     )
 
 def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dataset_name="test"):
-    """Loads conllu file, returns a list of dictionaries (one for each sentence) and a TF dataset"""
-    logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
+    """Load conllu file, return a list of dictionaries (one for each sentence) and a TF dataset."""
+    logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
     convert_functions = {"mbert": bert_convert_examples_to_tf_dataset,
                          "xlm-roberta": roberta_convert_examples_to_tf_dataset}
     data = read_conll(glob.glob(lang_path + "/*{}.conllu".format(dataset_name.split("_")[0]))[0])

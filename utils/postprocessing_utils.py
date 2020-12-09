@@ -3,24 +3,30 @@ import pandas as pd
 import utils.utils as utils
 
 def find_training_langs(table):
-    return [col_name for col_name in table.columns if (table[col_name].apply(lambda x: isinstance(x, (np.floating, float))).all())]
+    """Return list of training languages from a table."""
+    return [col_name for col_name in table.columns if (
+                table[col_name].apply(lambda x: isinstance(x, (np.floating, float))).all()
+            )]
 
 def reorder_columns(table):
+    """Reorder training languages (columns) to match the order of testing languages (rows)."""
     lang_column = utils.find_lang_column(table)
     training_langs = find_training_langs(table)
-    training_langs.sort()
+    training_langs.sort() # Sort so that we can compare both
     testing_langs = table[lang_column].values.tolist()
     testing_langs.sort()
     assert training_langs == testing_langs, "Training language columns are missing"
     return table[[lang_column] + table[lang_column].values.tolist()]
 
 def fill_missing_columns(table):
+    """Fill missing training language columns with NaNs."""
     training_langs = find_training_langs(table)
     missing_langs = np.setdiff1d(table[utils.find_lang_column(table)], training_langs)
     table[missing_langs] = pd.DataFrame([[np.nan] * len(missing_langs)], index=table.index)
     return table
 
 def mean_exclude_by_group(table):
+    """Make table with average metrics per testing group (excluding the training language)."""
     table_by_test_group = pd.DataFrame({"Group": ["Fusional", "Isolating", "Agglutinative", "Introflexive"]})
 
     for train_lang in find_training_langs(table):
@@ -33,6 +39,7 @@ def mean_exclude_by_group(table):
     return table_by_test_group
 
 def mean_exclude(table):
+    """Return mean metrics per testing language (excluding its own model)."""
     lang_cols = table.columns[1:]
     means = []
     for i, row in table.iterrows():
@@ -40,7 +47,8 @@ def mean_exclude(table):
         means.append(row_mean)
     return means
 
-def retrieve_results(file_path, skip):
+def retrieve_results(file_path, skip=3):
+    """Return dictionary where every entry corresponds to a metric and contains its corresponding tables."""
     results = pd.read_excel(file_path, sheet_name=None, header=None)
     output = {}
 

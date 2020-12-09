@@ -23,6 +23,7 @@ import data_preparation.data_preparation_sentiment as data_preparation_sentiment
 metric_names = {"pos": "Accuracy", "sentiment": "Macro F1"}
 
 def is_trainable(lang, data_path, task):
+    """Return True if the given language has training and validation data for the given task."""
     code_dicts = utils.make_lang_code_dicts()
     code_to_name = code_dicts["code_to_name"]
     name_to_code = code_dicts["name_to_code"]
@@ -34,6 +35,7 @@ def is_trainable(lang, data_path, task):
     return True
 
 def is_trained(lang, model_name, task, checkpoints_path):
+    """Return True if the given language has been trained in the given task."""
     code_dicts = utils.make_lang_code_dicts()
     code_to_name = code_dicts["code_to_name"]
     name_to_code = code_dicts["name_to_code"]
@@ -44,6 +46,7 @@ def is_trained(lang, model_name, task, checkpoints_path):
         return False
 
 def sort_langs_by_status(model_name, task, data_path, checkpoints_path, all_langs, excluded=[]):
+    """Return lists of trained languages, languages that have not been trained and languages that cannot be trained."""
     trained_langs = []
     cannot_train_langs = []
     remaining_langs = []
@@ -62,6 +65,8 @@ def sort_langs_by_status(model_name, task, data_path, checkpoints_path, all_lang
     return trained_langs, cannot_train_langs, remaining_langs
 
 def get_global_training_state(data_path, short_model_name, experiment, checkpoints_path):
+    """Print the training state of an experiment (languages trained, not yet trained, cannot be trained)
+    and return the next language to be trained."""
     code_dicts = utils.make_lang_code_dicts()
     code_to_name = code_dicts["code_to_name"]
     name_to_code = code_dicts["name_to_code"]
@@ -108,6 +113,19 @@ def get_global_training_state(data_path, short_model_name, experiment, checkpoin
     return training_lang
 
 def get_global_experiment_state(experiment, general_data_path, checkpoints_path, print_state=True, return_state=False):
+    """
+    Get overall training state of the experiment.
+
+    Parameters:
+    experiment: 'acl' or 'tfm'.
+    general_data_path: Path to data directory.
+    checkpoints_path: Path to where model weights are stored.
+    print_state: If True, print a summary of the training state.
+    return_state: If True, return a table with the experiment state.
+
+    Returns:
+    pd.DataFrame if return_state is set to True.
+    """
     assert experiment in ["tfm", "acl"], "Only possible experiments are 'tfm' and 'acl'"
     langs = utils.get_langs(experiment)
     state = {}
@@ -160,6 +178,7 @@ def get_global_experiment_state(experiment, general_data_path, checkpoints_path,
         return pd.DataFrame(state).T.astype(int)
 
 class Trainer:
+    """General class to control the fine-tuning process of a model."""
     def __init__(self, training_lang, data_path, task, short_model_name, use_class_weights=False):
         score_functions = {"pos": self.get_score_pos, "sentiment": self.get_score_sentiment}
 
@@ -179,6 +198,7 @@ class Trainer:
 
     def build_model(self, max_length, train_batch_size, learning_rate, epochs, num_labels,
                     tagset=None, gpu_growth=True, eval_batch_size=32):
+        """Create and compile model, along with its tokenizer."""
         if gpu_growth:
             model_utils.set_tf_memory_growth()
         self.model, self.tokenizer = model_utils.create_model(self.short_model_name,
@@ -197,6 +217,7 @@ class Trainer:
         self.eval_batch_size = eval_batch_size
 
     def setup_checkpoint(self, checkpoints_path):
+        """Setup a checkpoint directory and all necessary file names."""
         self.checkpoint_dir = checkpoints_path + self.training_lang + "/"
         if not os.path.isdir(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir)
@@ -212,13 +233,14 @@ class Trainer:
         self.temp_weights_filepath = self.checkpoint_dir + self.model_name + "_temp.hdf5"
         print("Temp weights file:", self.temp_weights_filepath)
 
-    def setup_eval(self, data, dataset_name):
+    def setup_eval_pos(self, data, dataset_name):
+        """Prepare evaluation for given PoS data."""
         self.eval_info[dataset_name] = {}
-        self.eval_info[dataset_name]["all_words"] = []
-        self.eval_info[dataset_name]["all_labels"] = []
-        self.eval_info[dataset_name]["real_tokens"] = []
-        self.eval_info[dataset_name]["subword_locs"] = []
-        acc_lengths = 0
+        self.eval_info[dataset_name]["all_words"] = [] # Full words for all the dataset
+        self.eval_info[dataset_name]["all_labels"] = [] # Labels for all the dataset
+        self.eval_info[dataset_name]["real_tokens"] = [] # Indexes of non-padding tokens
+        self.eval_info[dataset_name]["subword_locs"] = [] # Start and end index for every subword
+        acc_lengths = 0 # Accumulated lengths of the examples in subword tokens
 
         for i in range(len(data)):
             self.eval_info[dataset_name]["all_words"].extend(data[i]["tokens"]) # Full words
@@ -239,6 +261,7 @@ class Trainer:
             acc_lengths += len(idx_map)
 
     def prepare_data(self, limit=None):
+        """Load and preprocess all data."""
         datasets = {}
         dataset_names = ["train", "dev", "train_eval"]
 
@@ -250,7 +273,7 @@ class Trainer:
                     tagset=self.tagset, dataset_name=dataset_name
                 )
                 if dataset_name != "train":
-                    self.setup_eval(data, dataset_name)
+                    self.setup_eval_pos(data, dataset_name)
             elif self.task == "sentiment":
                 if self.use_class_weights:
                     balanced = False
@@ -278,7 +301,16 @@ class Trainer:
 
     def calc_class_weights(self):
         """
+        Calculate class weights according to:
+
         weight(class) = total / (n_classes * n_class)
+
+        where:
+        - 'total' is the total number of examples.
+        - 'n_classes' is the number of classes.
+        - 'n_class' is the number of examples for the given class.
+
+        This only applies to the sentiment task.
         """
         y = self.train_eval_data["sentiment"]
         self.class_weights = {}
@@ -287,6 +319,7 @@ class Trainer:
             self.class_weights[cls] = len(y) / (len(classes) * (y == cls).sum())
 
     def setup_training(self, load_previous_checkpoint=False):
+        """Initialize the Trainer's history, optionally resume training from last checkpoint."""
         self.history = History(self)
         if load_previous_checkpoint:
             print("Loading from", self.checkpoint_filepath)
@@ -294,9 +327,15 @@ class Trainer:
             self.model.load_weights(self.checkpoint_filepath)
 
     def reset_to_epoch_start(self):
+        """Reset the model's weights to those at the start of the epoch."""
         self.model.load_weights(self.temp_weights_filepath)
 
     def handle_oom(self, f, *args, **kwargs):
+        """
+        Handles tf.errors.ResourceExhaustedError when running a function, forcing it to retry.
+        If this happend while training, it will reset the model's weights to those at the start
+        of the current epoch. Extra arguments and keyword arguments are passed to the function.
+        """
         while True:
             try:
                 output = f(*args, **kwargs)
@@ -311,40 +350,47 @@ class Trainer:
         return output
 
     def show_time(self, epoch):
-        elapsed = time.time() - self.start_time
+        """Display time elapsed and remaining."""
+        elapsed = time.time() - self.start_time # Start time is set at the start of epoch 0
         print("{:<25}{:<25}".format("Elapsed:", str(timedelta(seconds=np.round(elapsed)))))
         remaining = elapsed / (epoch + 1 - self.history.start_epoch) * (self.epochs + self.history.start_epoch - (epoch + 1))
         print("{:<25}{:<25}".format("Estimated remaining:", str(timedelta(seconds=np.round(remaining)))))
         return elapsed, remaining
 
     def show_progress_bar(self, epoch):
+        """Display a progress bar for the training process."""
+        # Bar has to be created every time because it gets cleared every epoch.
         bar = tqdm(range(self.history.start_epoch, self.history.start_epoch + self.epochs),
                    ncols=750, bar_format="{l_bar}{bar}{n}/{total}")
         bar.update(epoch - self.history.start_epoch + 1)
         bar.refresh()
-        #tqdm.write("") # So the bar appears
 
     def get_score_pos(self, preds, data, dataset_name):
+        """Calculate accuracy for the given PoS predictions (at word level)."""
         filtered_preds = preds[0].argmax(axis=-1).flatten()[self.eval_info[dataset_name]["real_tokens"]].tolist()
         filtered_logits = preds[0].reshape(
-            (preds[0].shape[0]*preds[0].shape[1], preds[0].shape[2])
+            (preds[0].shape[0] * preds[0].shape[1], preds[0].shape[2])
         )[self.eval_info[dataset_name]["real_tokens"]]
         new_preds = pos_utils.reconstruct_subwords(
             self.eval_info[dataset_name]["subword_locs"], filtered_preds, filtered_logits
         )
 
+        assert len(new_preds) == len(self.eval_info[dataset_name]["all_labels"]), "Prediction and truth lengths do not match"
         return (np.array(self.eval_info[dataset_name]["all_labels"]) == np.array(new_preds)).mean()
 
     def get_score_sentiment(self, preds, data, dataset_name=None):
+        """Calculate Macro F1 score for the given sentiment predictions."""
         return f1_score(data["sentiment"].values, preds[0].argmax(axis=-1),
                         average="macro", zero_division=0)
 
     def save_checkpoint(self, dev_score):
+        """Save current weights as best weights."""
         print("\nDev score improved from", self.history.best_dev_score, "to", dev_score,
               ",\nsaving to " + self.checkpoint_filepath)
         self.model.save_weights(self.checkpoint_filepath)
 
     def manual_predict(self, data, batch_size):
+        """Alternative prediction method, use when model.predict runs out of memory due to data size."""
         preds = []
         for i in tqdm(range(0, len(data), batch_size)):
             dataset = data_preparation_pos.bert_convert_examples_to_tf_dataset(
@@ -355,6 +401,8 @@ class Trainer:
         return (np.array(preds),) # For consistency
 
     def train(self):
+        """Train the model."""
+        # Make sure class weights are calculated if they are needed
         if self.use_class_weights and not self.class_weights:
             print("Calculating class weights")
             self.calc_class_weights()
@@ -403,6 +451,7 @@ class Trainer:
             self.history.plot()
 
     def make_definitive(self):
+        """Rename all files linked to this checkpoint into their definitive names."""
         rename_files = [self.checkpoint_filepath, self.history.log_filepath,
                         self.history.checkpoint_params_filepath]
         if self.task == "sentiment":
@@ -411,12 +460,14 @@ class Trainer:
             os.replace(file, file.replace("_checkpoint", "").replace(self.suffix, ""))
 
     def get_main_params(self):
+        """Return dictionary with the Trainer's main parameters."""
         include = ["training_lang", "data_path", "task", "use_class_weights",
                    "model_name", "max_length", "train_batch_size", "eval_batch_size",
                    "learning_rate", "epochs", "num_labels", "checkpoint_filepath"]
         return {k: v for k, v in self.__dict__.items() if k in include}
 
 class History:
+    """Stores training history and handles log files."""
     def __init__(self, trainer):
         # Dirs and files
         self.logs_dir = trainer.checkpoint_dir + "logs/"
@@ -450,8 +501,9 @@ class History:
         self.trainer_params = trainer.get_main_params()
 
     def load_from_checkpoint(self):
+        """Load history from last checkpoint."""
         log = pd.read_excel(self.log_filepath)
-        end_index = log["dev_score"].argmax() + 1
+        end_index = log["dev_score"].argmax() + 1 # Get history until best dev
         index_best_dev_score = end_index - 1
         self.epoch_list = log["epoch"].values[:end_index].tolist()
         self.loss_list = log["loss"].values[:end_index].tolist()
@@ -464,9 +516,11 @@ class History:
         print("Checkpoint dev score:", self.best_dev_score)
 
     def convert_time(self, t):
+        """Convert seconds to standard time format."""
         return str(timedelta(seconds=np.round(t)))
 
     def update_best_dev_score(self, train_score, dev_score, epoch, epoch_duration, dev_preds):
+        """Update attributes and files with a new best validation score."""
         self.best_dev_score = dev_score
         self.best_dev_epoch = epoch
         if self.total_time_list:
@@ -490,6 +544,7 @@ class History:
             )
 
     def update_hist(self, epoch, loss, train_score, dev_score, epoch_duration):
+        """Update history with data from a new epoch."""
         self.epoch_list.append(epoch)
         self.loss_list.append(loss)
         self.train_score_list.append(train_score)
@@ -509,6 +564,7 @@ class History:
                       ).to_excel(self.log_filepath, index=False)
 
     def show_hist(self):
+        """Print history in table format."""
         print("\nHistory:\n")
         print("Best dev score so far: \033[1m{:.3f}\033[0m\n".format(self.best_dev_score))
         print("{:<20}{:<20}{:<20}{:<20}".format("Epoch", "Loss", "Train score", "Dev score"))
@@ -523,6 +579,7 @@ class History:
             )
 
     def plot(self):
+        """Show loss and score history plots."""
         sns.set()
         sns.set_style({"axes.linewidth": 1, "axes.edgecolor": "black",
                        "xtick.bottom": True, "ytick.left": True})
@@ -541,5 +598,5 @@ class History:
         plt.close()
 
     def get_best_dev(self):
-        """Score, epoch, time"""
+        """Return best validation score, and the epoch and training time at which it was obtained."""
         return self.best_dev_score, self.best_dev_epoch, self.best_dev_total_time

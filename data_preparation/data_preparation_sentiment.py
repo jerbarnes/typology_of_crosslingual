@@ -142,6 +142,7 @@ def roberta_convert_examples_to_tf_dataset(
 
 def load_dataset(lang_path, tokenizer, max_length, short_model_name, balanced=False,
                  dataset_name="test", limit=None):
+    """Load a given dataset and return a pd.DataFrame and a tf.data.Dataset objects."""
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
     tqdm.pandas(leave=False)
     convert_functions = {"mbert": bert_convert_examples_to_tf_dataset,
