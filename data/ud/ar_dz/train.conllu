@@ -599,7 +599,7 @@
 9	مع	m3a	ADP	P	AdpType=Prep	11	case	_	lang=ar_dz|ComposedUDPOS=ADP
 10-11	_	l'en	_	_	_	_	_	_	lang=fr
 10	_	l'	DET	DET	_	11	det	_	SpaceAfter=No|lang=fr|ComposedUDPOS=DET
-11	 الفريق الوطني	en	NOUN	NC	_	8	obl	_	lang=fr|ComposedUDPOS=NOUN
+11	الفريق الوطني	en	NOUN	NC	_	8	obl	_	lang=fr|ComposedUDPOS=NOUN
 
 # sent_id = 1903
 # text = djazair rahet men wakt irhab je crois ke mlih louken jet franca mesta3amretna balak ca seré mieux
@@ -818,7 +818,7 @@
 # sent_id = M3S65
 # text = al khabit iro7 i9abelha tol l le9ibla 9obla ora 9obla 7eta tesba7 3end al 9abla
 # trad_fr = le malin il se met en face d'elle en direction de qibla et bisous après bisous jusqu'à ce qu'elle soit chez la sage-femme
-1	ال 	al	DET	DET	_	2	det	_	lang=ar_dz|ComposedUDPOS=DET
+1	ال	al	DET	DET	_	2	det	_	lang=ar_dz|ComposedUDPOS=DET
 2	خبيث	khabit	ADJ	ADJ	_	3	nsubj	_	lang=ar_dz|ComposedUDPOS=ADJ
 3	إروح	iro7	VERB	V3ms	Gender=Masc|Number=Sing|Person=3	0	root	_	lang=ar_dz|ComposedUDPOS=VERB
 4	إقابلها	i9abelha	VERB	V3ms+CLO	Gender=Masc|Number=Sing|Person=3	3	xcomp	_	lang=ar_dz|ComposedUDPOS=VERB+PRON
@@ -1066,7 +1066,7 @@
 1	ٱمين	Amine	INTJ	I	_	3	discourse	_	lang=ar_dz|ComposedUDPOS=INTJ
 2	يا	Ya	INTJ	VOC	_	3	discourse	_	lang=ar_dz|ComposedUDPOS=INTJ
 3	رب	raba	NOUN	NC	_	0	root	_	lang=ar_dz|ComposedUDPOS=NOUN
-4	ال 	El	DET	DET	_	5	det	_	lang=ar_dz|ComposedUDPOS=DET
+4	ال	El	DET	DET	_	5	det	_	lang=ar_dz|ComposedUDPOS=DET
 5	عالمين	3alamine	NOUN	NC	_	3	nmod	_	lang=ar_dz|ComposedUDPOS=NOUN
 
 # sent_id = 4508
@@ -1351,7 +1351,7 @@
 # trad_fr = combien tu as dans ton compte
 1	كومبيان	combien	ADV	ADVWH	_	2	advmod	_	lang=fr|ComposedUDPOS=ADV
 2	عندك	3andak	PRON	P+PRO	AdpType=Prep	5	nsubj	_	lang=ar_dz|ComposedUDPOS=ADP+PRON
-3-4		fel	_	_	_	_	_	_	lang=ar_dz
+3-4	_	fel	_	_	_	_	_	_	lang=ar_dz
 3	ف	f	ADP	P	AdpType=Prep	5	case	_	SpaceAfter=No|lang=ar_dz|ComposedUDPOS=ADP
 4	ال	el	DET	DET	_	5	det	_	lang=ar_dz|ComposedUDPOS=DET
 5	كومت	konte	NOUN	NC	_	0	root	_	lang=fr|ComposedUDPOS=NOUN
@@ -19508,7 +19508,7 @@
 # sent_id = M2S14
 # text = lmaradia stylo ydir massacre à la transoneuse
 # trad_fr = Cette fois-ci le stylo va faire un massacle à la tronçonneuse
-1-3		lmaradia	_	_	_	_	_	_	lang=ar_dz
+1-3	_	lmaradia	_	_	_	_	_	_	lang=ar_dz
 1	ل	l	DET	DET	_	2	det	_	SpaceAfter=No|lang=ar_dz|ComposedUDPOS=DET
 2	مرة	mara	NOUN	NC	_	5	nmod	_	SpaceAfter=No|lang=ar_dz|ComposedUDPOS=NOUN
 3	ديا	dia	PRON	DEM	PronType=Dem	4	nsubj	_	lang=ar_dz|ComposedUDPOS=PRON
