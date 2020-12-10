@@ -555,14 +555,14 @@ class History:
     def show_hist(self):
         """Print history in table format."""
         print("\nHistory:\n")
-        print("Best dev score so far: \033[1m{:.3f}\033[0m\n".format(self.best_dev_score))
+        print("Best dev score so far: \033[1m{:.4f}\033[0m\n".format(self.best_dev_score))
         print("{:<20}{:<20}{:<20}{:<20}".format("Epoch", "Loss", "Train score", "Dev score"))
         for epoch in self.epoch_list:
             if epoch == self.best_dev_epoch:
                 bold_code = ("\033[1m", "\033[0m") # Add bold to row where best dev score was found
             else:
                 bold_code = ("", "")
-            print(bold_code[0] + "{:<20}{:<20.3f}{:<20.3f}{:<20.3f}".format(
+            print(bold_code[0] + "{:<20}{:<20.4f}{:<20.4f}{:<20.4f}".format(
                   self.epoch_list[epoch], self.loss_list[epoch], self.train_score_list[epoch],
                   self.dev_score_list[epoch]) + bold_code[1]
             )
