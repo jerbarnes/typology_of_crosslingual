@@ -484,6 +484,19 @@ class Trainer:
         else:
             print("\nNo better weights found.")
 
+    def delete_checkpoint(self):
+        """Deletes checkpoint's weights and files, along with temporary weights."""
+        delete = [self.checkpoint_filepath,
+                  self.temp_weights_filepath,
+                  self.history.log_filepath,
+                  self.history.checkpoint_params_filepath,
+                  self.history.checkpoint_report_filepath]
+
+        for file in delete:
+            if os.path.isfile(file):
+                print("Removing {}...".format(file))
+                os.remove(file)
+
     def get_main_params(self):
         """Return dictionary with the Trainer's main parameters."""
         include = ["training_lang", "data_path", "task", "use_class_weights",
