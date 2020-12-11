@@ -138,7 +138,15 @@ def find_table(r, task="", by="colname", update=False):
 
 def run_through_data(data_path, f, table=None, **kwargs):
     """
-    Apply a function to all data. Extra keyword arguments will be passed to f.
+    Apply a function to all data. Extra keyword arguments will be passed to f. Provides the function
+    with the following dictionary:
+        {"file_path": Path to data file,
+         "lang_name": Full name of the language,
+         "lang_code": ISO code for the language,
+         "dataset": Name of the dataset (train, dev or test)}
+
+    Note that 'table' is updated for every file considered, so if you are using this variable, the
+    function should always return it, even if it hasn't been modified.
 
     Parameters:
     data_path: Data directory.
@@ -147,7 +155,7 @@ def run_through_data(data_path, f, table=None, **kwargs):
     table: Variable to store info that will be updated by f.
 
     Returns:
-    table variable used to store info.
+    table variable used to store results from the function
     """
     # Find all data files in path
     data_files = glob.glob(data_path + "*/*.csv") + glob.glob(data_path + "*/*.conllu")
