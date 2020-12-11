@@ -3,6 +3,7 @@ from IPython.utils.text import columnize
 from tqdm.notebook import tqdm
 import os
 import sys
+import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -447,6 +448,41 @@ class Trainer:
             rename_files.append(self.history.checkpoint_report_filepath)
         for file in rename_files:
             os.replace(file, file.replace("_checkpoint", "").replace(self.suffix, ""))
+
+    def compare_checkpoint(self):
+        """Compare this Trainer's best dev score with other weight files from the same model,
+        task and language. Print those that surpass it."""
+        possible_weights = glob.glob(self.checkpoint_dir + "{}_{}*.hdf5".format(self.model_name,
+                                                                                self.task))
+        print("Current dev score: {:.4f}\n".format(self.history.best_dev_score))
+        print("Weight files found:\n", *possible_weights, sep="\n")
+        output = ""
+
+        for weight_file in possible_weights:
+            if weight_file != self.checkpoint_filepath:
+                weight_file = re.findall(r"\\(.*)", weight_file)[0] # Get file name only
+                unpacked = weight_file.split("_")
+
+                # Get params file
+                if len(unpacked) <= 2: # Definitive file, checkpoint is longer
+                    param_file = re.findall(r"(.*)\.", weight_file)[0] + "_params.xlsx"
+                else:
+                    unpacked = unpacked[:3] + ["params"] + unpacked[3:]
+                    param_file = re.findall(r"(.*)\.", "_".join(unpacked))[0] + ".xlsx"
+
+                if os.path.isfile(self.history.logs_dir + param_file): # Check if the file exists first
+                    df = pd.read_excel(self.history.logs_dir + param_file)
+                    dev_score = df.set_index("Variable").loc["dev_score", "Value"]
+                    if dev_score > self.history.best_dev_score:
+                        output += "\n{} has a higher score of \033[1m{:.4f}\033[0m\n(taken from {})".format(
+                            weight_file, dev_score, param_file
+                        )
+                else:
+                    print("No 'params' file found for", weight_file)
+        if output:
+            print(output)
+        else:
+            print("\nNo better weights found.")
 
     def get_main_params(self):
         """Return dictionary with the Trainer's main parameters."""
