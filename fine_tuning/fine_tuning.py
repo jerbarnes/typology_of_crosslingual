@@ -40,7 +40,7 @@ def is_trained(lang, model_name, task, checkpoints_path):
         return False
 
 def sort_langs_by_status(model_name, task, data_path, checkpoints_path, all_langs, excluded=[]):
-    """Return lists of trained languages, languages that have not been trained and languages that cannot be trained."""
+    """Return lists of trained languages, languages that cannot be trained and languages that have not been trained."""
     trained_langs = []
     cannot_train_langs = []
     remaining_langs = []
