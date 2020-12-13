@@ -12,6 +12,7 @@ def read_conll(input_file):
         #
         text = []
         tag = []
+        idx = None
         for line in open(input_file, encoding="utf-8"):
             if line.startswith("# sent_id ="):
                 idx = line.strip().split()[-1]
@@ -29,8 +30,10 @@ def read_conll(input_file):
                     label = splits[3] # the UD POS Tag label
                     text.append(token)
                     tag.append(label)
-                except ValueError:
+                except:
+                    print(line)
                     print(idx)
+                    raise
         return ids, texts, tags
 
 class MBERT_Tokenizer(BertTokenizer):
