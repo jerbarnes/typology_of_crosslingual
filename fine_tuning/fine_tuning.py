@@ -460,7 +460,7 @@ class Trainer:
 
         for weight_file in possible_weights:
             if weight_file != self.checkpoint_filepath:
-                weight_file = re.findall(r"\\(.*)", weight_file)[0] # Get file name only
+                weight_file = re.split(r"\\|/", weight_file)[-1] # Get file name only
                 unpacked = weight_file.split("_")
 
                 # Get params file
