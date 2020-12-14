@@ -76,7 +76,7 @@ def find_lang_column(table):
     if isinstance(table.columns, pd.MultiIndex): # Check for hierarchical columns
         matches = list(filter(r.match, table.columns.levels[0])) # Check in top level
     else:
-        matches = list(filter(r.match, table.columns))
+        matches = list(filter(r.match, [col for col in table.columns if isinstance(col, str)]))
     if matches:
         return matches[0]
     else:
