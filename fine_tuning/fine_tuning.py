@@ -167,16 +167,17 @@ def get_global_experiment_state(experiment, general_data_path, checkpoints_path,
     if return_state:
         return pd.DataFrame(state).T.astype(int)
 
-def get_dev_scores(task, checkpoint_dir):
+def get_fine_tune_scores(task, checkpoint_dir):
     param_files = glob.glob("{}*/logs/*{}_params.xlsx".format(checkpoint_dir, task))
     scores = []
     for file in param_files:
         df = pd.read_excel(file)
         model = re.search(r"([^\\/]*)_{}_params.xlsx".format(task), file).group(1)
-        dev_score = df.loc[df["Variable"] == "dev_score", "Value"].values[0]
+        train_score = df.loc[df["Variable"] == "train_score", "Value"].astype(float).values[0]
+        dev_score = df.loc[df["Variable"] == "dev_score", "Value"].astype(float).values[0]
         lang = utils.code_to_name[re.split(r"[\\/]", file)[-3]]
-        scores.append((lang, model, dev_score))
-    return pd.DataFrame(scores, columns=["Language", "Model", "Score"])
+        scores.append((lang, model, train_score, dev_score))
+    return pd.DataFrame(scores, columns=["Language", "Model", "Train_Score", "Dev_score"])
 
 class Trainer:
     """General class to control the fine-tuning process of a model."""
