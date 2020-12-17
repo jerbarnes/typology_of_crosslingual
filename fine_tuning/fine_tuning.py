@@ -392,13 +392,28 @@ class Trainer:
 
     def manual_predict(self, data, batch_size):
         """Alternative prediction method, use when model.predict runs out of memory due to data size."""
+        convert_functions = {("pos", "mbert"): data_preparation_pos.bert_convert_examples_to_tf_dataset,
+                             ("pos", "xlm-roberta"): data_preparation_pos.roberta_convert_examples_to_tf_dataset,
+                             ("sentiment", "mbert"): data_preparation_sentiment.bert_convert_examples_to_tf_dataset,
+                             ("sentiment", "xlm-roberta"): data_preparation_sentiment.roberta_convert_examples_to_tf_dataset}
         preds = []
-        for i in tqdm(range(0, len(data), batch_size)):
-            dataset = data_preparation_pos.bert_convert_examples_to_tf_dataset(
-                data[i:i+batch_size], self.tokenizer, self.tagset, self.max_length
-            )
-            dataset, batches = model_utils.make_batches(dataset, batch_size, repetitions=1, shuffle=False)
-            preds.extend(self.model.predict(dataset, steps=batches)[0])
+        if self.task == "pos":
+            for i in tqdm(range(0, len(data), batch_size)):
+                dataset = convert_functions[("pos", self.short_model_name)](
+                    data[i:i+batch_size], self.tokenizer, self.tagset, self.max_length
+                )
+                dataset, batches = model_utils.make_batches(dataset, batch_size, repetitions=1, shuffle=False)
+                preds.extend(self.model.predict(dataset, steps=batches)[0])
+        else:
+            for i in tqdm(range(0, data.shape[0], batch_size)):
+                dataset = convert_functions[("sentiment", self.short_model_name)](
+                    [(data_preparation_sentiment.Example(
+                        text=text, category_index=label)
+                     ) for label, text in data.values[i:i+batch_size]],
+                    self.tokenizer, max_length=self.max_length
+                )
+                dataset, batches = model_utils.make_batches(dataset, batch_size, repetitions=1, shuffle=False)
+                preds.extend(self.model.predict(dataset, steps=batches)[0])
         return (np.array(preds),) # For consistency
 
     def train(self):
@@ -451,14 +466,17 @@ class Trainer:
             self.history.show_hist()
             self.history.plot()
 
-    def make_definitive(self):
-        """Rename all files linked to this checkpoint into their definitive names."""
+    def make_definitive(self, delete_temp=False):
+        """Rename all files linked to this checkpoint into their definitive names. Set
+        'delete_temp' to True to delete the temporal weights file."""
         rename_files = [self.checkpoint_filepath, self.history.log_filepath,
                         self.history.checkpoint_params_filepath]
         if self.task == "sentiment":
             rename_files.append(self.history.checkpoint_report_filepath)
         for file in rename_files:
             os.replace(file, file.replace("_checkpoint", "").replace(self.suffix, ""))
+        if delete_temp:
+            os.remove(self.temp_weights_filepath)
 
     def compare_checkpoint(self):
         """Compare this Trainer's best dev score with other weight files from the same model,
