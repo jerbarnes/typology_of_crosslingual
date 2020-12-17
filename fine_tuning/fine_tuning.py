@@ -320,10 +320,42 @@ class Trainer:
         for cls in classes:
             self.class_weights[cls] = len(y) / (len(classes) * (y == cls).sum())
 
-    def setup_training(self, load_previous_checkpoint=False):
-        """Initialize the Trainer's history, optionally resume training from last checkpoint."""
+    def setup_training(self, load_previous_checkpoint=False, resume_from_temp=False, finish_eval=False):
+        """
+        Initialize the Trainer's history.
+
+        Parameters:
+        load_previous_checkpoint: If True, resume training from the last checkpoint.
+        resume_from_temp: If True, resume training from the last temporal weights.
+        finish_eval: Use with 'resume_from_temp' when the last epoch's evaluation could not be finished. If True,
+                     temporal weights will be evaluated before resuming.
+        """
         self.history = History(self)
-        if load_previous_checkpoint:
+        if resume_from_temp:
+            print("Loading from", self.temp_weights_filepath)
+            if os.path.isfile(self.history.log_filepath):
+                self.history.load_from_last()
+            self.model.load_weights(self.temp_weights_filepath)
+            if finish_eval:
+                print("Evaluating...")
+                # Carry out the evaluation for the previous unfinished epoch
+                train_preds, dev_preds = self.predict_all()
+                train_score = self.metric(train_preds, self.train_eval_data, "train_eval")
+                dev_score = self.metric(dev_preds, self.dev_data, "dev")
+
+                # Update history
+                if self.history.epoch_list:
+                    epoch = self.history.epoch_list[-1] + 1
+                else:
+                    epoch = 0
+                loss = np.nan # Cannot infer these, leave as missing
+                epoch_duration = 0
+                if dev_score > self.history.best_dev_score:
+                    self.save_checkpoint(dev_score)
+                    self.history.update_best_dev_score(train_score, dev_score,
+                                                       epoch, epoch_duration, dev_preds)
+                self.history.update_hist(epoch, loss, train_score, dev_score, epoch_duration)
+        elif load_previous_checkpoint:
             print("Loading from", self.checkpoint_filepath)
             self.history.load_from_checkpoint()
             self.model.load_weights(self.checkpoint_filepath)
@@ -335,7 +367,7 @@ class Trainer:
     def handle_oom(self, f, *args, **kwargs):
         """
         Handles tf.errors.ResourceExhaustedError when running a function, forcing it to retry.
-        If this happend while training, it will reset the model's weights to those at the start
+        If this happened while training, it will reset the model's weights to those at the start
         of the current epoch. Extra arguments and keyword arguments are passed to the function.
         """
         while True:
@@ -417,6 +449,19 @@ class Trainer:
                 preds.extend(self.model.predict(dataset, steps=batches)[0])
         return (np.array(preds),) # For consistency
 
+    def predict_all(self):
+        """Return train and dev predictions."""
+        if len(self.train_eval_data) < 1e5:
+            train_preds = self.handle_oom(self.model.predict, self.train_eval_dataset,
+                                          steps=self.train_eval_batches, verbose=1)
+        else:
+            # If train data is large, TF predict will always run out of memory
+            train_preds = self.handle_oom(self.manual_predict, self.train_eval_data,
+                                          batch_size=self.eval_batch_size)
+        dev_preds = self.handle_oom(self.model.predict, self.dev_dataset,
+                                    steps=self.dev_batches, verbose=1)
+        return train_preds, dev_preds
+
     def train(self):
         """Train the model."""
         # Make sure class weights are calculated if they are needed
@@ -438,15 +483,7 @@ class Trainer:
             loss = hist.history["loss"][0]
             print("Saving temp weights...")
             self.model.save_weights(self.temp_weights_filepath)
-            if len(self.train_eval_data) < 1e5:
-                train_preds = self.handle_oom(self.model.predict, self.train_eval_dataset,
-                                              steps=self.train_eval_batches, verbose=1)
-            else:
-                # If train data is large, TF predict will always run out of memory
-                train_preds = self.handle_oom(self.manual_predict, self.train_eval_data,
-                                              batch_size=self.eval_batch_size)
-            dev_preds = self.handle_oom(self.model.predict, self.dev_dataset,
-                                        steps=self.dev_batches, verbose=1)
+            train_preds, dev_preds = self.predict_all()
 
             # Show progress
             clear_output()
@@ -583,9 +620,23 @@ class History:
         self.start_epoch = self.epoch_list[-1] + 1
         print("Checkpoint dev score:", self.best_dev_score)
 
+    def load_from_last(self):
+        """Load history from last epoch."""
+        log = pd.read_excel(self.log_filepath)
+        index_best_dev_score = log["dev_score"].argmax()
+        self.epoch_list = log["epoch"].values.tolist()
+        self.loss_list = log["loss"].values.tolist()
+        self.train_score_list = log["train_score"].values.tolist()
+        self.dev_score_list = log["dev_score"].values.tolist()
+        self.total_time_list = log["total_time"].values.tolist()
+        self.best_dev_score = self.dev_score_list[index_best_dev_score]
+        self.best_dev_epoch = self.epoch_list[index_best_dev_score]
+        self.start_epoch = self.epoch_list[-1] + 1
+        print("Best dev score:", self.best_dev_score)
+
     def convert_time(self, t):
         """Convert seconds to standard time format."""
-        return str(timedelta(seconds=np.round(t)))
+        return str(timedelta(seconds=np.round(float(t))))
 
     def update_best_dev_score(self, train_score, dev_score, epoch, epoch_duration, dev_preds):
         """Update attributes and files with a new best validation score."""
