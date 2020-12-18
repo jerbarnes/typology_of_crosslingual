@@ -136,6 +136,25 @@ def find_table(r, task="", by="colname", update=False):
     path = find_relative_path_to_root() + path
     return path, colname
 
+def merge_tables(table1, table2, how, cols_table2=None):
+    """
+    Merge two pandas DataFrames on the language column.
+
+    'cols_table2' can be used to select which columns from table2 will be merged (eg. ['col_name1', 'col_name2']).
+    When set to None, it will use all columns.
+    """
+    left_lang_col = find_lang_column(table1)
+    right_lang_col = find_lang_column(table2)
+    if cols_table2 is None:
+        cols_table2 = table2.columns
+    else:
+        cols_table2 = [right_lang_col] + cols_table2
+
+    new_table = pd.merge(table1, table2[cols_table2], how=how, left_on=left_lang_col, right_on=right_lang_col)
+    if left_lang_col != right_lang_col:
+        new_table = new_table.drop(right_lang_col, axis=1)
+    return new_table
+
 def run_through_data(data_path, f, table=None, **kwargs):
     """
     Apply a function to all data. Extra keyword arguments will be passed to f. Provides the function
