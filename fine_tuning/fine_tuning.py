@@ -12,6 +12,7 @@ import time
 import tensorflow as tf
 import itertools
 from datetime import timedelta
+from collections import defaultdict
 from sklearn.metrics import classification_report, f1_score
 from IPython.display import clear_output
 sys.path.append("..")
@@ -169,15 +170,16 @@ def get_global_experiment_state(experiment, general_data_path, checkpoints_path,
 
 def get_fine_tune_scores(task, checkpoint_dir):
     param_files = glob.glob("{}*/logs/*{}_params.xlsx".format(checkpoint_dir, task))
-    scores = []
+    d = defaultdict(list)
+    # Ignore these variables
+    exclude = ["data_path", "task", "num_labels", "epochs", "eval_batch_size", "checkpoint_filepath"]
     for file in param_files:
         df = pd.read_excel(file)
-        model = re.search(r"([^\\/]*)_{}_params.xlsx".format(task), file).group(1)
-        train_score = df.loc[df["Variable"] == "train_score", "Value"].astype(float).values[0]
-        dev_score = df.loc[df["Variable"] == "dev_score", "Value"].astype(float).values[0]
-        lang = utils.code_to_name[re.split(r"[\\/]", file)[-3]]
-        scores.append((lang, model, train_score, dev_score))
-    return pd.DataFrame(scores, columns=["Language", "Model", "Train_Score", "Dev_score"])
+        df = df[~df["Variable"].isin(exclude)]
+        df.iat[0, 1] = utils.code_to_name[df.iat[0, 1]] # Get full lang name
+        for key, value in df.values:
+            d[key].append(value)
+    return pd.DataFrame(d).astype({"train_score": float, "epoch": int})
 
 class Trainer:
     """General class to control the fine-tuning process of a model."""
