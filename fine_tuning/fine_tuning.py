@@ -264,17 +264,21 @@ class Trainer:
             self.eval_info[dataset_name]["subword_locs"].extend(np.array([sub_starts, sub_ends]).T.tolist())
             acc_lengths += len(idx_map)
 
-    def prepare_data(self, limit=None):
+    def prepare_data(self, limit=None, train_eval_subsample=None):
         """Load and preprocess all data."""
         datasets = {}
         dataset_names = ["train", "dev", "train_eval"]
 
         for dataset_name in tqdm(dataset_names):
+            if train_eval_subsample and dataset_name == "train_eval":
+                sample = train_eval_subsample # Set sample only for train eval
+            else:
+                sample = None
             # Load plain data and TF dataset
             if self.task == "pos":
                 data, dataset = data_preparation_pos.load_dataset(
                     self.lang_path, self.tokenizer, self.max_length, self.short_model_name,
-                    tagset=self.tagset, dataset_name=dataset_name
+                    tagset=self.tagset, dataset_name=dataset_name, sample=sample
                 )
                 if dataset_name != "train":
                     self.setup_eval_pos(data, dataset_name)
@@ -287,7 +291,7 @@ class Trainer:
                 self.limit = limit
                 data, dataset = data_preparation_sentiment.load_dataset(
                     self.lang_path, self.tokenizer, self.max_length, self.short_model_name,
-                    balanced=balanced, limit=limit, dataset_name=dataset_name
+                    balanced=balanced, limit=limit, dataset_name=dataset_name, sample=sample
                 )
             if dataset_name == "train":
                 dataset, batches = model_utils.make_batches(
