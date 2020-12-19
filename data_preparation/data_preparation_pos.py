@@ -3,6 +3,7 @@ from transformers.data.processors.utils import InputFeatures
 import tensorflow as tf
 import logging
 import glob
+import numpy as np
 
 def read_conll(input_file):
         """Reads a conllu file."""
@@ -206,8 +207,9 @@ def roberta_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_leng
         ),
     )
 
-def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dataset_name="test"):
-    """Load conllu file, return a list of dictionaries (one for each sentence) and a TF dataset."""
+def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dataset_name="test", sample=None):
+    """Load conllu file, return a list of dictionaries (one for each sentence) and a TF dataset. Use sample to
+    get a subset of the given size."""
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
     convert_functions = {"mbert": bert_convert_examples_to_tf_dataset,
                          "xlm-roberta": roberta_convert_examples_to_tf_dataset}
@@ -218,6 +220,8 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dat
     # In case some example is over max length
     examples = [example for example in examples if len(tokenizer.subword_tokenize(example["tokens"],
                                                                                   example["tags"])[0]) <= max_length]
+    if sample:
+        examples = np.random.choice(examples, size=sample)
     dataset = convert_functions[short_model_name](examples=examples, tokenizer=tokenizer,
                                                   tagset=tagset, max_length=max_length)
     return examples, dataset
