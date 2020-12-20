@@ -125,11 +125,12 @@ def find_table(r, task="", by="colname", update=False):
         path = find_relative_path_to_root() + paths[i]
         colname = matches[i]
     else:
-        print("\nMatched paths", *enumerate(np.unique(matches)), sep="\n")
+        matches = np.unique(matches)
+        print("\nMatched paths", *enumerate(matches), sep="\n")
         i = int(input("Choose path: "))
         path = find_relative_path_to_root() + matches[i]
         cols = pd.read_excel(path).columns
-        print("\nPossible columns", *enumerate(pd.read_excel(path).columns), sep="\n")
+        print("\nPossible columns", *enumerate(cols), sep="\n")
         i = int(input("Choose column: "))
         colname = cols[i]
 
