@@ -179,6 +179,11 @@ def get_fine_tune_scores(task, checkpoint_dir):
         df.iat[0, 1] = utils.code_to_name[df.iat[0, 1]] # Get full lang name
         for key, value in df.values:
             d[key].append(value)
+        if task == "sentiment":
+            # Scores per class
+            report = pd.read_excel(file.replace("params", "report"))
+            d["dev_neg_score"].append(report.loc[0, "f1-score"])
+            d["dev_pos_score"].append(report.loc[1, "f1-score"])
     return pd.DataFrame(d).astype({"train_score": float, "epoch": int})
 
 class Trainer:
