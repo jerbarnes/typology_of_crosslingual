@@ -366,6 +366,7 @@ class Trainer:
                     self.history.update_best_dev_score(train_score, dev_score,
                                                        epoch, epoch_duration, dev_preds)
                 self.history.update_hist(epoch, loss, train_score, dev_score, epoch_duration)
+                self.history.start_epoch = epoch + 1
         elif load_previous_checkpoint:
             print("Loading from", self.checkpoint_filepath)
             self.history.load_from_checkpoint()
