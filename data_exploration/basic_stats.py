@@ -5,7 +5,7 @@ import itertools
 from collections import Counter
 
 import sys
-sys.path.append("..")
+sys.path.extend(["..", "../.."])
 from utils import utils, model_utils
 from data_preparation.data_preparation_pos import read_conll
 
