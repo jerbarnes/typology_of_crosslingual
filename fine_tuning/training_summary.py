@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
+import glob
+import re
+from tqdm.notebook import tqdm
 
 import sys
 sys.path.append("..")
-from utils import utils, plotting_utils, find_all_colnames
+from utils import utils, plotting_utils, find_all_colnames, pos_utils
 import fine_tuning
 
 def make_train_summary_table(checkpoints_path, task, experiment, save_to=None):
@@ -58,3 +61,58 @@ def make_train_summary_table(checkpoints_path, task, experiment, save_to=None):
     if save_to:
         table.to_excel(save_to, index=False)
     return table
+
+def eval_all_dev(checkpoints_path, task, experiment, load_from=None, num_models=2):
+    # Setup
+    langs = utils.get_langs(experiment)
+    data_path = utils.find_relative_path_to_root()
+    if task == "pos":
+        data_path += "data/ud/"
+    elif task == "sentiment":
+        data_path += "data/sentiment/"
+    tagset = pos_utils.get_ud_tags()
+    # Most parameters do not matter, but we need them to build the model
+    params = {"max_length": 256,
+              "train_batch_size": 8,
+              "learning_rate": 2e-5,
+              "epochs": 30,
+              "tagset": tagset,
+              "num_labels": len(tagset),
+              "eval_batch_size": 64}
+    if load_from:
+        output = pd.read_excel(load_from).to_dict(orient="list")
+    else:
+        output = {"Language": [], "Model": [], "Dev_score": []}
+
+    for lang_name in tqdm(langs):
+        # Check if the language is already done
+        if output["Language"].count(lang_name) == num_models:
+            print("Already evaluated", lang_name)
+            continue
+
+        training_lang = utils.name_to_code[lang_name]
+        weight_files = glob.glob(checkpoints_path + "{}/*{}.hdf5".format(training_lang, task))
+        for file in weight_files:
+            model_name = re.search(r"[^a-z]([a-z-]+)_[a-z]+\.", file).group(1)
+            if model_name == "bert-base-multilingual-cased":
+                short_model_name = "mbert"
+            elif model_name == "tf-xlm-roberta-base":
+                short_model_name = "xlm-roberta"
+            # Check if this model has already been tested for the language
+            if (len(output["Language"]) > 0) and (output["Language"][-1] == lang_name) and (output["Model"][-1] == model_name):
+                print("Already evaluated {} for {}".format(model_name, lang_name))
+                continue
+
+            trainer = fine_tuning.Trainer(training_lang, data_path, task, short_model_name)
+            trainer.build_model(**params)
+            trainer.prepare_data()
+            trainer.model.load_weights(file)
+            preds = trainer.handle_oom(trainer.manual_predict, trainer.dev_data,
+                                       batch_size=trainer.eval_batch_size)
+            dev_score = trainer.metric(preds, trainer.dev_data, "dev")
+            trainer.model = None
+            output["Language"].append(lang_name)
+            output["Model"].append(model_name)
+            output["Dev_score"].append(dev_score)
+            pd.DataFrame(output).to_excel("eval_temp.xlsx", index=False) # Save progress
+    return utils.order_table(pd.DataFrame(output), experiment=experiment)
