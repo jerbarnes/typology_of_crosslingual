@@ -1,0 +1,10 @@
+no.dnb.vipps
+no.nrk.yr
+no.db.app
+com.norwegian.travelassistant
+com.tibber.android
+com.netflix.mediaclient
+no.posten.sporing.controller
+no.nrk.tv
+no.skandiabanken
+com.snapchat.android
