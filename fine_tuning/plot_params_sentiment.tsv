@@ -1,0 +1,7 @@
+id	x	y	xaxis_title	yaxis_title	log_x	kind	style	use_tex
+train_vs_dev_scores	train_score	dev_score	Train Score	Dev Score	False	lmplot		True
+train_size_vs_dev_score	real_train_size	dev_score	Train Size (log)	Dev Score	True	relplot	train_batch_size	False
+train_length_vs_dev_score	train_avg_tokens	dev_score	Train Average Length (log)	Dev Score	False	lmplot		True
+pos_ratio_vs_dev_score	pos_ratio	dev_score	Proportion of Positive Examples	Dev Score	False	lmplot		True
+pos_vs_neg_dev_scores	dev_pos_score	dev_neg_score	Dev Score (Positive Class)	Dev Score (Negative Class)	False	lmplot		True
+model_dev_scores	bert-base-multilingual-cased	tf-xlm-roberta-base	Dev Score (M-BERT)	Dev Score (XLM-Roberta)	False	lmplot		True

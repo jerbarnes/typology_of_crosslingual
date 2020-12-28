@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import glob
 import re
+import matplotlib.pyplot as plt
+from pathlib import Path
 from tqdm.notebook import tqdm
 
 import sys
@@ -61,6 +63,43 @@ def make_train_summary_table(checkpoints_path, task, experiment, save_to=None):
     if save_to:
         table.to_excel(save_to, index=False)
     return table
+
+def make_train_summary_plots(task, output_path):
+    # Paths will always be relative to this file's location
+    summary_file_path = Path(__file__).parent / "../fine_tuning/training_summary_acl_sentiment.xlsx"
+    params_file_path = Path(__file__).parent / "../fine_tuning/plot_params_sentiment.tsv"
+    # Read data and plot instructions
+    df = pd.read_excel(summary_file_path)
+    params = pd.read_csv(params_file_path, sep="\t", header=0)
+    params = params.replace({np.nan: None})
+    params_model = params[~params["id"].str.startswith("model")] # Model-specific plots
+    params_comparison = params[params["id"].str.startswith("model")] # Plots to compare models
+
+    models = df["model_name"].unique()
+    for model in models:
+        if model == "bert-base-multilingual-cased":
+            name = "M-BERT"
+            folder = "mbert"
+        elif model == "tf-xlm-roberta-base":
+            name = "XLM-Roberta"
+            folder = "xlm_roberta"
+        data = df[df["model_name"] == model]
+
+        # Model-specific plots
+        for i, row in params_model.iterrows():
+            g = plotting_utils.plots.scatter(**{**row.iloc[1:], **{"data": data, "title": name}})
+            plt.savefig(output_path + "{}/{}_{}.pdf".format(folder, task, row["id"]), dpi=400, bbox_inches="tight")
+            plt.close()
+
+    # Plots to compare models
+    data = df[["training_lang", "model_name", "dev_score"]].pivot(index="training_lang",
+                                                                  columns="model_name",
+                                                                  values="dev_score")
+    data = data.reset_index()
+    for i, row in params_comparison.iterrows():
+        g = plotting_utils.plots.scatter(**{**row.iloc[1:], **{"data": data, "title": "Model Comparison"}})
+        plt.savefig(output_path + "model_comparison/{}_{}.pdf".format(task, row["id"]), dpi=400, bbox_inches="tight")
+        plt.close()
 
 def eval_all_dev(checkpoints_path, task, experiment, load_from=None, num_models=2):
     # Setup
