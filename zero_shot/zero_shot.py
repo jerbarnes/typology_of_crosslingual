@@ -228,7 +228,7 @@ class Tester:
         f1 = f1_score(y_true, clean_preds, average="macro", zero_division=0)
         return accuracy, precision, recall, f1
 
-    def test_on_lang(self, training_lang, testing_lang):
+    def test_on_lang(self, training_lang, testing_lang, verbose=1):
         """
         Test a model fine-tuned on a particular language over another (or the same) language's test
         set and return the resulting scores.
@@ -254,7 +254,7 @@ class Tester:
 
         lang_path = os.path.join(self.data_path, testing_lang)
         data, dataset, batches = self.load_data(lang_path)
-        preds = self.handle_oom(self.model.predict, dataset, steps=batches, verbose=1)
+        preds = self.handle_oom(self.model.predict, dataset, steps=batches, verbose=verbose)
         scores = (self.get_scores_pos if self.task == "pos" else self.get_scores_sentiment)(preds, data)
         return scores
 
@@ -294,7 +294,7 @@ class Tester:
                 df[training_lang] = table[sheet_name]
                 df.to_excel(writer, index=False, sheet_name=sheet_name)
 
-    def evaluate_lang(self, training_lang, write_to_file=False):
+    def evaluate_lang(self, training_lang, write_to_file=False, verbose=1):
         """Evaluate a fine-tuned model on all languages. Update results file if 'write_to_file' is set
         to True, return a pd.DataFrame otherwise."""
         self.check_if_model_exists()
@@ -307,7 +307,7 @@ class Tester:
         # Get evaluation results
         eval_results = []
         for testing_lang in tqdm(self.included_langs, leave=False):
-            scores = self.test_on_lang(training_lang, utils.name_to_code[testing_lang])
+            scores = self.test_on_lang(training_lang, utils.name_to_code[testing_lang], verbose=verbose)
             eval_results.append((testing_lang, *scores))
 
         # Build table and either return it or update the file with it
@@ -335,4 +335,4 @@ class Tester:
 
         for training_lang in tqdm(remaining_langs):
             print("Now evaluating", training_lang)
-            self.evaluate_lang(training_lang, write_to_file=True)
+            self.evaluate_lang(training_lang, write_to_file=True, verbose=0)
