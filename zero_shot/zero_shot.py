@@ -5,13 +5,13 @@ import tensorflow as tf
 import functools
 from IPython.utils.text import columnize
 from tqdm.notebook import tqdm
-from data_preparation import data_preparation_pos, data_preparation_sentiment
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 import sys
 sys.path.append("..")
 from utils import utils, model_utils, pos_utils
 from fine_tuning import fine_tuning
+from data_preparation import data_preparation_pos, data_preparation_sentiment
 
 def is_tested(lang, results_path):
     if os.path.isfile(results_path):
