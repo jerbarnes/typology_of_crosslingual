@@ -1,9 +1,9 @@
-import basic_stats, lengths, sentiment_balance, tag_stats
 import logging
 
 import sys
 sys.path.extend(["..", "../.."])
 from utils import utils, model_utils
+from data_exploration import basic_stats, lengths, sentiment_balance, tag_stats
 
 def calc_stats(task, experiment):
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
