@@ -98,7 +98,7 @@ class Postprocessor:
         for sheet_name, df in self.results.items():
             worksheet = self.workbook.add_worksheet(sheet_name)
 
-            df = utils.order_table(df)
+            df = utils.order_table(df, self.experiment)
             # Add empty column for missing training languages
             df = fill_missing_columns(df)
             # Reorder columns so that they match the order of testing languages
@@ -125,7 +125,7 @@ class Postprocessor:
             output2.insert(loc=1, column=None, value=[None]*output2.shape[0])
 
             # Write to sheet
-            worksheet = self.write_to_sheet(output2, worksheet, start=df.shape[0] + space)
+            worksheet = self.write_to_sheet(output2, worksheet, start=df.shape[0] + self.space)
 
             # Mean of previous means by train language group
             df_by_both_group = df_by_test_group.drop("Baseline", axis=1)
@@ -140,16 +140,17 @@ class Postprocessor:
             output3.insert(loc=1, column=None, value=[None]*output3.shape[0])
 
             # Write to sheet
-            worksheet = self.write_to_sheet(output3, worksheet, start=df.shape[0] + df_by_test_group.shape[0] + space * 2)
+            worksheet = self.write_to_sheet(output3, worksheet, start=df.shape[0] + df_by_test_group.shape[0] + self.space * 2)
 
             # Mean over others for every column
-            start = 1 - space
+            start = 1 - self.space
             for i, table in enumerate([output1, output2, output3]):
-                start += table.shape[0] + space
+                start += table.shape[0] + self.space
                 worksheet = self.write_to_sheet(self.calc_mean_over_others(table), worksheet,
                                                 start=start, header=False)
 
         self.workbook.close()
+        print("Saved file to " + self.results_path + "results_{}_postprocessed.xlsx".format(self.task))
 
     def write_to_sheet(self, table, worksheet, start, header=True):
         max_locs = self.row_maxs(table)
