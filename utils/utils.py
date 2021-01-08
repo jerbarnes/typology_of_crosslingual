@@ -56,13 +56,18 @@ def order_table(table, experiment):
     new_table = new_table.sort_values(by=["sort"]).drop("sort", axis=1, level=level).reset_index(drop=True)
     return new_table
 
-def convert_table_to_latex(table, experiment):
+def convert_table_to_latex(table, experiment, add_color=False, add_group=True):
     """Print table in latex format, also output dataframe."""
     assert experiment in ["tfm", "acl"], "Invalid experiment, must be 'tfm' or 'acl'"
     table = order_table(table, experiment) # In case it's not already in correct order
 
     # Retrieve language groups in correct order and add them to table
-    table = add_lang_groups(table, "group")
+    if add_group:
+        table = add_lang_groups(table, "group")
+
+    if add_color:
+        # Add color to each group
+        table.iloc[:, 0] = table.iloc[:, 0].apply(lambda x: r"\{}{{{}}}".format(x.lower(), x))
 
     # Latex output
     print("\n".join([" & ".join(line) + r"\\" for line in table.astype(str).values]))
@@ -84,10 +89,10 @@ def find_lang_column(table):
 
 def add_lang_groups(table, colname="group"):
     """Add a column containing the morphological group of each language."""
-    # Retrieve language groups in correct order and add them to table in human readable format
     lang_colname = find_lang_column(table)
-    table.insert(loc=0, column=colname, value=table[lang_colname].map(lang_to_group))
-    return table
+    new_table = table.copy() # Make a copy so the original does not get modified
+    new_table.insert(loc=0, column=colname, value=table[lang_colname].map(lang_to_group))
+    return new_table
 
 def find_table(r, task="", by="colname", update=False):
     """
