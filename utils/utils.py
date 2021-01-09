@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import glob
 import re
+import tkinter as tk
+from tkinter import filedialog
 from tqdm.notebook import tqdm
 from pathlib import Path
 from . import find_all_colnames
@@ -201,3 +203,9 @@ def run_through_data(data_path, f, table=None, **kwargs):
                    "dataset": dataset},
                    table, **kwargs)
     return table
+
+def select_dir():
+    root = tk.Tk()
+    directory = filedialog.askdirectory(initialdir="..") + "/"
+    root.withdraw()
+    return directory
