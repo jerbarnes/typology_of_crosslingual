@@ -24,13 +24,13 @@ def balance(info, d, included_langs):
                         "Balanced_total": balanced_total}
     return d
 
-def build_balance_table(experiment, save=False):
+def build_balance_table(experiment, save_to=None):
     included_langs = utils.get_langs(experiment)
     table = utils.run_through_data(utils.find_relative_path_to_root() + "data/sentiment/",
                                    balance, table={}, included_langs=included_langs)
     table = pd.DataFrame(table).T.rename_axis("Language").reset_index()
     table = table.astype(dict.fromkeys(["Positive", "Negative", "Total", "Balanced_total"], int))
     table = utils.order_table(table, experiment=experiment)
-    if save:
-        table.to_excel(input("Save to: "), index=False)
+    if save_to:
+        table.to_excel(save_to, index=False)
     return table

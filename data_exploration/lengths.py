@@ -42,7 +42,7 @@ def pos_examples_per_maxlength(info, d, included_langs, tokenizer, lengths=[64, 
             d[lang_name][l] = len(examples)
     return d
 
-def build_lengths_table(task, short_model_name, experiment, lengths=[64, 128, 256, 512], save=False):
+def build_lengths_table(task, short_model_name, experiment, lengths=[64, 128, 256, 512], save_to=None):
     data_path = utils.find_relative_path_to_root()
     if task == "sentiment":
         data_path += "data/sentiment/"
@@ -57,6 +57,6 @@ def build_lengths_table(task, short_model_name, experiment, lengths=[64, 128, 25
                                      tokenizer=tokenizer, lengths=lengths)
     table = pd.DataFrame(results).T.rename_axis("language").reset_index()
     table = utils.order_table(table, "acl")
-    if save:
-        table.to_excel(input("Save to: "), index=False)
+    if save_to:
+        table.to_excel(save_to, index=False)
     return table
