@@ -168,7 +168,8 @@ def get_global_experiment_state(experiment, general_data_path, checkpoints_path,
     if return_state:
         return pd.DataFrame(state).T.astype(int)
 
-def get_fine_tune_scores(task, checkpoint_dir):
+def get_fine_tune_scores(task, checkpoint_dir, experiment):
+    included_langs = utils.get_langs(experiment)
     param_files = glob.glob("{}*/logs/*{}_params.xlsx".format(checkpoint_dir, task))
     d = defaultdict(list)
     # Ignore these variables
@@ -176,14 +177,16 @@ def get_fine_tune_scores(task, checkpoint_dir):
     for file in param_files:
         df = pd.read_excel(file)
         df = df[~df["Variable"].isin(exclude)]
-        df.iat[0, 1] = utils.code_to_name[df.iat[0, 1]] # Get full lang name
-        for key, value in df.values:
-            d[key].append(value)
-        if task == "sentiment":
-            # Scores per class
-            report = pd.read_excel(file.replace("params", "report"))
-            d["dev_neg_score"].append(report.loc[0, "f1-score"])
-            d["dev_pos_score"].append(report.loc[1, "f1-score"])
+        lang_name = utils.code_to_name[df.iat[0, 1]] # Get full lang name
+        if lang_name in included_langs:
+            df.iat[0, 1] = lang_name
+            for key, value in df.values:
+                d[key].append(value)
+            if task == "sentiment":
+                # Scores per class
+                report = pd.read_excel(file.replace("params", "report"))
+                d["dev_neg_score"].append(report.loc[0, "f1-score"])
+                d["dev_pos_score"].append(report.loc[1, "f1-score"])
     return pd.DataFrame(d).astype({"train_score": float, "epoch": int})
 
 class Trainer:
