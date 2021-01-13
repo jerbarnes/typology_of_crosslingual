@@ -34,15 +34,15 @@ def count_multiwords(info, table, included_langs):
             table.loc[table.shape[0], ["language", dataset, dataset + " (%)"]] = lang_name, multiwords, multiwords/total_tags * 100
     return table
 
-def build_multiwords_table(experiment, save=False):
+def build_multiwords_table(experiment, save_to=None):
     included_langs = utils.get_langs(experiment)
     data_path = utils.find_relative_path_to_root() + "data/ud/"
     table = pd.DataFrame(dict.fromkeys(["language", "train", "train (%)", "dev", "dev (%)", "test", "test (%)"], []))
     table = utils.run_through_data(data_path, count_multiwords, table, included_langs=included_langs)
     table = utils.order_table(table, experiment)
     table = table.astype(dict.fromkeys(["train", "dev", "test"], pd.Int64Dtype())) # Convert to int
-    if save:
-        table.to_excel(input("Save to: "), index=False)
+    if save_to:
+        table.to_excel(save_to, index=False)
     return table
 
 ### TAG DISTRIBUTION

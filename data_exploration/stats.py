@@ -26,10 +26,13 @@ def calc_stats(task, experiment, save_to):
         print("Calculating sentiment balance...")
         balance_table = sentiment_balance.build_balance_table(experiment, save_to=save_to["balance"])
     elif task == "pos":
+        # Multiwords
+        print("Calculating multiword stats...")
+        multiwords_table = tag_stats.build_multiwords_table(experiment, save_to=save_to["multiwords"])
+
         # Tag stats
         print("Calculating tag stats...")
         tag_tables = tag_stats.build_tag_tables(experiment)
-        img_path = input("Save plots to: ")
-        tag_stats.export_all_plots(tag_tables, img_path=save_to["tag_stats_img_path"])
+        tag_stats.export_all_plots(tag_tables, path=save_to["tag_stats_img_path"])
         tag_stats.export_tag_tables(tag_tables, experiment, output_path=save_to["tag_stats"],
                                     img_path=save_to["tag_stats_img_path"])
