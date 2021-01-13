@@ -1,12 +1,16 @@
 import numpy as np
 import pandas as pd
 import xlsxwriter
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import seaborn as sns
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 import sys
 sys.path.append("..")
 import utils.utils as utils
 from data_preparation.data_preparation_pos import read_conll
+from utils.plotting_utils import plots
 
 def find_training_langs(table):
     """Return list of training languages from a table."""
@@ -290,3 +294,219 @@ def calc_baselines(task, experiment, save=False):
                 ).to_excel(writer, index=False, sheet_name=metric)
 
     return baselines
+
+def remove_untrained_cols(table):
+    return table.drop(table.columns[(table == "-").max()].tolist(), axis=1)
+
+def remove_untrained_rows(table):
+    return table[(table != "-").all(axis=1)].reset_index(drop=True)
+
+def group(df, grouped_train, grouped_test):
+    if grouped_train and not grouped_test:
+        df = df.groupby(["Train-Group", "Test-Language"], as_index=False, sort=False).mean()
+    elif not grouped_train and grouped_test:
+        df = df.groupby(["Train-Language", "Test-Group"], as_index=False, sort=False).mean()
+    elif grouped_train and grouped_test:
+        df = df.groupby(["Train-Group", "Test-Group"], as_index=False, sort=False).mean()
+    return df
+
+class Metrics:
+    def __init__(self, results_dir, experiment, short_model_name, task, metric, skip=3):
+        results_filepath = results_dir + "{}/{}/results_{}_postprocessed.xlsx".format(experiment,
+                                                                                      short_model_name,
+                                                                                      task)
+        results = retrieve_results(results_filepath, skip)
+        langvlang = results[metric]["langvlang"]
+        n_rows = langvlang.iloc[:,0].isnull().argmax()
+        self.langvlang = langvlang.iloc[:n_rows, :-1]
+        langvgroup = results[metric]["langvgroup"]
+        self.langvgroup = langvgroup.iloc[:4, [True] + [False] + [True]*n_rows + [False]]
+
+    def within_score(self, grouped=False):
+        df = pd.DataFrame({"Train-Group": self.langvlang.iloc[:, 0], # Bc train and test langs are in the same order
+                           "Train-Language": self.langvlang.columns[2:],
+                           "Within-Score": np.diagonal(self.langvlang.iloc[:, 2:].values)})
+        df = remove_untrained_rows(df)
+        df["Within-Score"] = df["Within-Score"].astype(float)
+
+        if grouped:
+            # Mean within-score per training group
+            df = df.groupby("Train-Group", as_index=False, sort=False).mean()
+
+        return df
+
+    def cross_score(self, grouped_train=False, grouped_test=False):
+        df = pd.melt(self.langvlang.rename(columns={"Test\Train": "Test-Language"}),
+                     id_vars="Test-Language",
+                     value_vars=self.langvlang.columns[2:],
+                     var_name="Train-Language",
+                     value_name="Cross-Score")
+        df = df[["Train-Language", "Test-Language", "Cross-Score"]]
+        df = df[df["Train-Language"] != df["Test-Language"]] # Remove within
+        df = remove_untrained_rows(df)
+        df["Cross-Score"] = df["Cross-Score"].astype(float)
+        # Add train and test groups
+        df.insert(loc=0, column="Train-Group", value=df["Train-Language"].apply(lambda x: utils.lang_to_group[x]))
+        df.insert(loc=2, column="Test-Group", value=df["Test-Language"].apply(lambda x: utils.lang_to_group[x]))
+
+        df = group(df, grouped_train, grouped_test)
+
+        return df
+
+    def transfer_loss(self, grouped_train=False, grouped_test=False):
+        df_within = self.within_score()
+        df_cross = self.cross_score()
+        df = pd.merge(df_within, df_cross.iloc[:, 1:], how="left", on="Train-Language")
+        df["Transfer-Loss"] = df["Within-Score"] - df["Cross-Score"]
+
+        df = group(df, grouped_train, grouped_test)
+
+        return df
+
+class Transfer:
+    def __init__(self, results_path, skip=3):
+        self.results_path = results_path
+        self.skip = skip
+        self.transfer_loss = {"pos": {}, "sentiment": {}}
+
+    def prepare_tables(self, task, metric, as_percent=False):
+        p = 1 + 99 * as_percent
+
+        # Retrieve postprocessed results tables
+        results = retrieve_results(self.results_path + "results_{}_postprocessed.xlsx".format(task), self.skip)
+        langvlang = results[metric]["langvlang"]
+        langvgroup = results[metric]["langvgroup"]
+
+        # Build dataframes
+        n_rows = langvlang.iloc[:,0].isnull().argmax()
+        df = pd.DataFrame({"Train-Group": langvlang.iloc[:n_rows, 0], "Train-Language": langvlang.columns[2:-1],
+                           "Within-Score": np.diagonal(langvlang.iloc[:n_rows, 2:-1].values)})
+        df_group = langvgroup.iloc[:4, [True] + [False] + [True]*n_rows + [False]]
+        df_group = pd.melt(df_group.rename(columns={"Test\Train": "Test-Group"}), id_vars="Test-Group",
+                                           value_vars=df_group.columns[1:],
+                                           var_name="Train-Language", value_name="Cross-Score")
+        df = remove_untrained_rows(df)
+        n_rows = df.shape[0]
+        df = pd.merge(df, df_group, on="Train-Language")
+        df["Cross-Score"] = df["Cross-Score"].astype(float) * p
+        df["Within-Score"] = df["Within-Score"].astype(float) * p
+
+        return df, n_rows
+
+    def calc_transfer_loss(self, task, metric, as_percent=False):
+        transfer, n_rows = self.prepare_tables(task, metric, as_percent)
+
+        # Calculate transfer loss
+        transfer["Transfer-Loss"] = transfer["Within-Score"] - transfer["Cross-Score"]
+
+        # Make same/other division
+        final = transfer[transfer["Test-Group"] != transfer["Train-Group"]].groupby(by=["Train-Group", "Train-Language"],
+                                                                                    as_index=False, sort=False).mean()
+        final["Test-Group"] = "Others"
+        temp = transfer[transfer["Test-Group"] == transfer["Train-Group"]].copy()
+        temp.loc[:, "Test-Group"] = "Same"
+        final = pd.concat([final, temp], ignore_index=True)
+        final["sort"] = np.concatenate((np.arange(1, n_rows * 2, 2), np.arange(0, n_rows * 2, 2)))
+        final = final.sort_values("sort").reset_index(drop=True).drop("sort", axis=1)
+        final["Relative-Transfer-Loss"] = final["Transfer-Loss"] / final["Within-Score"]
+        final_avg = final.groupby(by=["Train-Group", "Test-Group"], as_index=False, sort=False).mean()
+
+        self.transfer_loss[task][metric] = {"all": final, "groups": final_avg}
+
+    def plot_transfer(self, task, metric, grouped=False, extra_fontsize=0, legend_coords=(1, 0.5), xlim=None,
+                      yaxis_title="Train", xaxis_title="Transfer Loss",
+                      title="Transfer Loss in the Same vs Other Language Groups"):
+        if metric not in self.transfer_loss[task].keys():
+            raise Exception("Transfer loss has not been calculated for this task and metric.")
+
+        # Prepare seaborn
+        plots.prepare_sns()
+
+        # Set parameters
+        colors = plots.get_group_colors()
+        bar_colors = plots.get_dual_bar_colors(as_dict=True)
+
+        if not grouped:
+            df = self.transfer_loss[task][metric]["all"]
+            y = "Train-Language"
+            height = 12
+            aspect = 1.5
+            train_groups = df["Train-Group"]
+            group_counts = train_groups.value_counts()[train_groups.unique()].values / 2
+            label_colors = np.array([np.repeat(color, times).tolist() for color, times in zip(colors, group_counts)]).sum()
+        else:
+            df = self.transfer_loss[task][metric]["groups"]
+            y = "Train-Group"
+            height = 4
+            aspect = 3.5
+            label_colors = colors
+
+        scale = 1 + 99 * (df["Transfer-Loss"] > 1).any()
+
+        # Main plot
+        g = sns.catplot(
+            data=df, kind="bar", x="Transfer-Loss", y=y, hue="Test-Group",
+            height=height, aspect=aspect, palette=bar_colors, saturation=0.3, legend=False
+        )
+
+        # Add text
+        y_labels = df[y].unique().tolist()
+
+        for y_label in y_labels:
+            values = df.loc[(df[y] == y_label), "Transfer-Loss"].values
+            dy = [-0.2, 0.2]
+            for i, idx in enumerate(df.index[df[y] == y_label]):
+                if scale == 100:
+                    p = "{:.1f}".format(values[i])
+                else:
+                    p = "{:.3f}".format(values[i])
+                extra_dy = 0.025
+                g.ax.text(values[i] + 0.005 * scale, y_labels.index(y_label) + dy[i] + extra_dy, p,
+                          verticalalignment="center", horizontalalignment="left",
+                          fontsize=18 + extra_fontsize)
+
+            # Difference bar
+            bbar = patches.Rectangle((values[0], y_labels.index(y_label) + dy[i] - 0.2), values[1] - values[0], -0.4,
+                                      fill=True, color="#a3a3a3", alpha=0.7, ec=None)
+            g.ax.add_patch(bbar)
+            x = values.mean()
+            align = "center"
+            diff = values[1] - values[0]
+            color = "black"
+            if np.abs(diff) <= 0.03 * scale:
+                align = "left"
+                x = values[0] + 0.03 * scale
+            if diff < 0:
+                color = "red"
+            if scale == 100:
+                diff_text = r"\textbf{{{:.1f}}}".format(diff)
+            else:
+                diff_text = r"\textbf{{{:.3f}}}".format(diff)
+            g.ax.text(x, y_labels.index(y_label) + dy[i] + extra_dy - 0.4, diff_text,
+                      verticalalignment="center", horizontalalignment=align,
+                      fontsize=18 + extra_fontsize, color=color,
+                      bbox=dict(boxstyle="round, pad=0.15",
+                                         fc=(1, 1, 1, 0.5),
+                                         ec="none"))
+
+        # Add y axis labels
+        self.add_yaxis_labels(g, label_colors)
+
+        # Add legend
+        plots.add_legend(title="Test Language Group", fontsize=20 + extra_fontsize, coords=legend_coords)
+
+        # Titles, xlim, fontsize, etc
+        if xlim is None:
+            xmax = df["Transfer-Loss"].max()
+            xlim = (0, xmax + xmax * 0.05)
+        plt.xlim(xlim)
+        plt.xticks(np.arange(xlim[0], xlim[1], 0.05 * scale))
+        plots.add_titles(title=title, xaxis_title=xaxis_title, yaxis_title=yaxis_title, fontsize=16 + extra_fontsize)
+
+        plt.show()
+        plt.close()
+
+    def add_yaxis_labels(self, fig, label_colors):
+        for i, label in enumerate(fig.ax.yaxis.get_ticklabels()):
+            label.set_bbox(dict(boxstyle="round,pad=0.85",
+                                fc=label_colors[i]))
