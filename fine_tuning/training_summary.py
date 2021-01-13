@@ -13,7 +13,7 @@ import fine_tuning
 
 def make_train_summary_table(checkpoints_path, task, experiment, save_to=None):
     # Get scores and other info
-    table = fine_tuning.get_fine_tune_scores(task, checkpoints_path)
+    table = fine_tuning.get_fine_tune_scores(task, checkpoints_path, experiment)
     table = utils.order_table(table, experiment)
 
     # Merge other useful columns
@@ -49,25 +49,28 @@ def make_train_summary_table(checkpoints_path, task, experiment, save_to=None):
                      right_on=["language", "model_name"]).drop("language", axis=1)
 
     # Make column for actual number of training examples used
-    def get_real_train_size(x):
-        return x["train_examples"] if x["use_class_weights"] else x["Balanced_total"]
-    table["real_train_size"] = table[["use_class_weights", "train_examples", "Balanced_total"]].apply(
-        get_real_train_size, axis=1
-    )
+    if task == "pos":
+        table["real_train_size"] = table["train_examples"]
+    elif task == "sentiment":
+        def get_real_train_size(x):
+            return x["train_examples"] if x["use_class_weights"] else x["Balanced_total"]
+        table["real_train_size"] = table[["use_class_weights", "train_examples", "Balanced_total"]].apply(
+            get_real_train_size, axis=1
+        )
 
-    # Rename columns and save
-    table = table.rename(columns={"Ratio": "pos_ratio",
-                                  "Negative": "neg_class_weight",
-                                  "Positive": "pos_class_weight",
-                                  "Balanced_total": "balanced_train_examples"})
+        # Rename columns and save
+        table = table.rename(columns={"Ratio": "pos_ratio",
+                                      "Negative": "neg_class_weight",
+                                      "Positive": "pos_class_weight",
+                                      "Balanced_total": "balanced_train_examples"})
     if save_to:
         table.to_excel(save_to, index=False)
     return table
 
 def make_train_summary_plots(task, output_path):
     # Paths will always be relative to this file's location
-    summary_file_path = Path(__file__).parent / "../fine_tuning/training_summary_acl_sentiment.xlsx"
-    params_file_path = Path(__file__).parent / "../fine_tuning/plot_params_sentiment.tsv"
+    summary_file_path = Path(__file__).parent / "../fine_tuning/training_summary_acl_{}.xlsx".format(task)
+    params_file_path = Path(__file__).parent / "../fine_tuning/plot_params_{}.tsv".format(task)
     # Read data and plot instructions
     df = pd.read_excel(summary_file_path)
     params = pd.read_csv(params_file_path, sep="\t", header=0)
