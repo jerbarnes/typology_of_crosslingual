@@ -24,6 +24,12 @@ def get_group_colors(as_dict=False):
     else:
         return ["#95c78f", "#f79d97", "#abaff5", "#fffecc"]
 
+def get_dual_bar_colors(as_dict=False):
+    if as_dict:
+        return {"Same": "#870c85", "Others": "#ff1cfb"}
+    else:
+        return ["#870c85", "#ff1cfb"]
+
 def add_titles(title, xaxis_title, yaxis_title, fontsize):
     plt.ylabel(yaxis_title, fontsize=8 + fontsize, labelpad=20)
     plt.xlabel(xaxis_title, fontsize=8 +  fontsize)
