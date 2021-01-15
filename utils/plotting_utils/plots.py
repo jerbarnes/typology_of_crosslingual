@@ -52,11 +52,11 @@ def scatter(x, y, data, style=None, kind="lmplot", log_x=False, log_y=False, ext
     if x not in data.columns:
         path, colname = utils.find_table(x, by="colname")
         x = colname
-        data = self.merge_tables(data, pd.read_excel(path), how="left", cols_table2=[colname])
+        data = utils.merge_tables(data, pd.read_excel(path), how="left", cols_table2=[colname])
     if y not in data.columns:
         path, colname = utils.find_table(y, by="colname")
         y = colname
-        data = self.merge_tables(data, pd.read_excel(path), how="left", cols_table2=[colname])
+        data = utils.merge_tables(data, pd.read_excel(path), how="left", cols_table2=[colname])
     # Transform to log
     if log_x:
         data["log_" + x] = np.log(data[x])
