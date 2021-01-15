@@ -141,7 +141,7 @@ def roberta_convert_examples_to_tf_dataset(
     )
 
 def load_dataset(lang_path, tokenizer, max_length, short_model_name, balanced=False,
-                 dataset_name="test", limit=None, sample=None):
+                 dataset_name="test", limit=None, sample=None, sample_idxs=None):
     """Load a given dataset and return a pd.DataFrame and a tf.data.Dataset objects."""
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
     tqdm.pandas(leave=False)
@@ -172,6 +172,8 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, balanced=Fa
         raise Exception("Must set 'balanced' to True to choose a manual limit.")
     elif sample:
         df = df.sample(sample).reset_index(drop=True)
+    elif sample_idxs is not None and dataset_name.startswith("train"):
+        df = df.iloc[sample_idxs]
 
     # Convert to TF dataset
     dataset = convert_functions[short_model_name](
