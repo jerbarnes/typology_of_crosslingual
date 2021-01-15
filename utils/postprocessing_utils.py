@@ -312,6 +312,7 @@ def group(df, grouped_train, grouped_test):
 
 class Metrics:
     def __init__(self, results_dir, experiment, short_model_name, task, metric, skip=3):
+        self.experiment = experiment
         results_filepath = results_dir + "{}/{}/results_{}_postprocessed.xlsx".format(experiment,
                                                                                       short_model_name,
                                                                                       task)
@@ -360,6 +361,17 @@ class Metrics:
         df["Transfer-Loss"] = df["Within-Score"] - df["Cross-Score"]
 
         df = group(df, grouped_train, grouped_test)
+
+        return df
+
+    def cross_over_score(self, grouped=False):
+        df = self.cross_score(grouped_train=True).groupby("Test-Language", as_index=False, sort=False).mean()
+        df = utils.order_table(df, experiment=self.experiment)
+        df = utils.add_lang_groups(df, colname="Test-Group")
+        df = df.rename(columns={"Cross-Score": "Cross-Over-Score"})
+
+        if grouped:
+            df = df.groupby("Test-Group", as_index=False, sort=False).mean()
 
         return df
 
