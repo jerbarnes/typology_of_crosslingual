@@ -284,8 +284,14 @@ class Trainer:
                 sample = train_eval_subsample # Set sample only for train eval
             elif train_subsample and dataset_name.startswith("train"):
                 if sample_idxs is None:
-                    df = pd.read_csv(self.lang_path + "/{}.csv".format(dataset_name.split("_")[0]), header=None)
-                    sample_idxs = np.random.choice(df.shape[0], size=train_subsample, replace=False)
+                    lengths_path = (
+                        utils.find_relative_path_to_root() +
+                        "data_exploration/acl/tables/example_lengths_{}_{}.xlsx".format(self.task,
+                                                                                       self.short_model_name)
+                    )
+                    df = pd.read_excel(lengths_path)
+                    num_examples = df.loc[df["language"] == utils.code_to_name[self.training_lang], 256].values[0]
+                    sample_idxs = np.random.choice(num_examples, size=train_subsample, replace=False)
             # Load plain data and TF dataset
             if self.task == "pos":
                 data, dataset = data_preparation_pos.load_dataset(
