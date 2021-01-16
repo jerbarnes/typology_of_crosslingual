@@ -207,7 +207,8 @@ def roberta_convert_examples_to_tf_dataset(examples, tokenizer, tagset, max_leng
         ),
     )
 
-def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dataset_name="test", sample=None):
+def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset,
+                 dataset_name="test", sample=None, sample_idxs=None):
     """Load conllu file, return a list of dictionaries (one for each sentence) and a TF dataset. Use sample to
     get a subset of the given size."""
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
@@ -222,6 +223,9 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset, dat
                                                                                   example["tags"])[0]) <= max_length]
     if sample:
         examples = np.random.choice(examples, size=sample)
+    elif sample_idxs is not None:
+        examples = np.array(examples)[sample_idxs].tolist()
+
     dataset = convert_functions[short_model_name](examples=examples, tokenizer=tokenizer,
                                                   tagset=tagset, max_length=max_length)
     return examples, dataset

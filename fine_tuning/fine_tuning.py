@@ -272,6 +272,17 @@ class Trainer:
             self.eval_info[dataset_name]["subword_locs"].extend(np.array([sub_starts, sub_ends]).T.tolist())
             acc_lengths += len(idx_map)
 
+    def num_examples_under_maxlen(self):
+        """Return the number of training examples that are below max_length."""
+        lengths_path = (
+            utils.find_relative_path_to_root() +
+            "data_exploration/acl/tables/example_lengths_{}_{}.xlsx".format(self.task,
+                                                                            self.short_model_name)
+        )
+        df = pd.read_excel(lengths_path)
+        num_examples = df.loc[df["language"] == utils.code_to_name[self.training_lang], self.max_length].values[0]
+        return num_examples
+
     def prepare_data(self, limit=None, train_eval_subsample=None, train_subsample=None):
         """Load and preprocess all data."""
         datasets = {}
@@ -283,20 +294,14 @@ class Trainer:
             if train_eval_subsample and dataset_name == "train_eval":
                 sample = train_eval_subsample # Set sample only for train eval
             elif train_subsample and dataset_name.startswith("train"):
-                if sample_idxs is None:
-                    lengths_path = (
-                        utils.find_relative_path_to_root() +
-                        "data_exploration/acl/tables/example_lengths_{}_{}.xlsx".format(self.task,
-                                                                                       self.short_model_name)
-                    )
-                    df = pd.read_excel(lengths_path)
-                    num_examples = df.loc[df["language"] == utils.code_to_name[self.training_lang], 256].values[0]
+                if sample_idxs is None: # Do this once only
+                    num_examples = self.num_examples_under_maxlen()
                     sample_idxs = np.random.choice(num_examples, size=train_subsample, replace=False)
             # Load plain data and TF dataset
             if self.task == "pos":
                 data, dataset = data_preparation_pos.load_dataset(
                     self.lang_path, self.tokenizer, self.max_length, self.short_model_name,
-                    tagset=self.tagset, dataset_name=dataset_name, sample=sample
+                    tagset=self.tagset, dataset_name=dataset_name, sample=sample, sample_idxs=sample_idxs
                 )
                 if dataset_name != "train":
                     self.setup_eval_pos(data, dataset_name)
