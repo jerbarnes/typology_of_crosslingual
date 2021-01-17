@@ -44,7 +44,7 @@ def add_legend(title, fontsize, coords):
 def scatter(x, y, data, style=None, kind="lmplot", log_x=False, log_y=False, extra_fontsize=0,
             fit_reg=False, exclude=[], exclude_reg=[], xlim=None, ylim=None, custom_offsets={},
             title="", xaxis_title="", yaxis_title="", legend_coords=(1, 0.5), use_tex=True,
-            show=False, remove_labels=False):
+            show=False, remove_labels=False, **kwargs):
     lang_col = utils.find_lang_column(data)
     data = data[~data[lang_col].isin(exclude)] # Exclude languages
     data = utils.add_lang_groups(data, colname="Group")
@@ -83,12 +83,12 @@ def scatter(x, y, data, style=None, kind="lmplot", log_x=False, log_y=False, ext
     # Main plot
     if kind == "lmplot":
         g = sns.lmplot(x=x, y=y, data=data, hue="Group", palette=colors, fit_reg=False, legend=False,
-                       height=6, aspect=1.5, scatter_kws={"s": 150, "edgecolors": "black"})
+                       height=6, aspect=1.5, scatter_kws={"s": 150, "edgecolors": "black"}, **kwargs)
         # Add legend
         add_legend(title="Language Group", fontsize=20 + extra_fontsize, coords=legend_coords)
     elif kind == "relplot":
         g = sns.relplot(x=x, y=y, data=data, hue="Group", style=style, palette=colors, legend="full",
-                        height=8, aspect=1.25, edgecolor="black", s=150)
+                        height=8, aspect=1.25, edgecolor="black", s=150, **kwargs)
         # Add legend
         leg = g._legend
         leg.set_visible(False)
