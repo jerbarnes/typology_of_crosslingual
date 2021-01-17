@@ -277,11 +277,15 @@ class Tester:
         table = utils.order_table(table, self.experiment)
         return table
 
-    def update_results_file(self, training_lang, table):
-        """Update the results file with new data from a given training language."""
+    def update_results_file(self, table, training_lang=None, testing_lang=None):
+        """Update the results file with new data from a given training/testing language."""
         # Transform from ISO if necessary
-        if training_lang in utils.code_to_name.keys():
+        if training_lang is not None and training_lang in utils.code_to_name.keys():
             training_lang = utils.code_to_name[training_lang]
+        elif testing_lang is not None and testing_lang in utils.code_to_name.keys():
+            testing_lang = utils.code_to_name[testing_lang]
+        elif training_lang is None and testing_lang is None:
+            raise Exception("Must choose training or testing lagnuage")
         # 'results' will be a dict where every key is a metric and value the results for the metric
         if os.path.isfile(self.results_path):
             results = pd.read_excel(self.results_path, sheet_name=None)
@@ -290,8 +294,15 @@ class Tester:
                                     pd.DataFrame({"Language": table["Language"].values}))
         with pd.ExcelWriter(self.results_path) as writer:
             for sheet_name, df in results.items():
-                # Add each the column for each metric (=sheet_name) in the corresponding sheet
-                df[training_lang] = table[sheet_name]
+                if training_lang is not None:
+                    # Add each the column for each metric (=sheet_name) in the corresponding sheet
+                    df[training_lang] = table[sheet_name]
+                elif testing_lang is not None:
+                    # Delete old values if they exist
+                    df = df.drop(df.index[df["Language"] == testing_lang])
+                    df = pd.concat([df, table.loc[0:0]])
+                    df = utils.order_table(df, experiment=self.experiment)
+                    table = table.drop(0).reset_index(drop=True) # Drop so the next metric becomes first
                 df.to_excel(writer, index=False, sheet_name=sheet_name)
 
     def evaluate_lang(self, training_lang, write_to_file=False, verbose=1):
@@ -317,9 +328,36 @@ class Tester:
             print("Updating {} after evaluating {} with {}.".format(self.results_path,
                                                                     training_lang,
                                                                     self.short_model_name))
-            self.update_results_file(training_lang, table)
+            self.update_results_file(table, training_lang=training_lang)
         else:
             return table
+
+    def evaluate_over_lang(self, testing_lang, write_to_file=False, verbose=1):
+        self.check_if_model_exists()
+        params = {"model_name": self.model_name,
+                  "task": self.task,
+                  "data_path": self.data_path,
+                  "checkpoints_path": self.checkpoint_dir,
+                  "all_langs": self.included_langs,
+                  "results_path": self.results_path}
+
+        rows = {}
+        rows["Language"] = testing_lang
+        langs = [lang for lang in self.included_langs if fine_tuning.is_trainable(lang, self.data_path, self.task)]
+        for training_lang in tqdm(langs):
+            print("Now evaluating", training_lang)
+            scores = self.test_on_lang(training_lang, testing_lang, verbose)
+            rows[training_lang] = scores
+
+        rows = pd.DataFrame(rows)
+
+        if write_to_file:
+            print("Updating {} after evaluating over {} with {}.".format(self.results_path,
+                                                                    testing_lang,
+                                                                    self.short_model_name))
+            self.update_results_file(rows, testing_lang=testing_lang)
+        else:
+            return rows
 
     def batch_evaluate(self):
         self.check_if_model_exists()
