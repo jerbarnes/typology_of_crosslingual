@@ -223,7 +223,7 @@ def load_dataset(lang_path, tokenizer, max_length, short_model_name, tagset,
                                                                                   example["tags"])[0]) <= max_length]
     if sample:
         examples = np.random.choice(examples, size=sample)
-    elif sample_idxs is not None:
+    elif sample_idxs is not None and dataset_name.startswith("train"):
         examples = np.array(examples)[sample_idxs].tolist()
 
     dataset = convert_functions[short_model_name](examples=examples, tokenizer=tokenizer,
