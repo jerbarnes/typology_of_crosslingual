@@ -117,7 +117,6 @@ def get_global_experiment_state(experiment, general_data_path, checkpoints_path,
     Returns:
     pd.DataFrame if return_state is set to True.
     """
-    assert experiment in ["tfm", "acl"], "Only possible experiments are 'tfm' and 'acl'"
     langs = utils.get_langs(experiment)
     state = {}
     data_paths = {"pos": general_data_path + "ud/", "sentiment": general_data_path + "sentiment/"}

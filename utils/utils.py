@@ -37,13 +37,11 @@ def find_relative_path_to_root():
 
 def get_langs(experiment):
     """Return a list of all languages included in the experiment."""
-    assert experiment in ["tfm", "acl"], "Only possible experiments are 'tfm' and 'acl'"
     file_path = Path(__file__).parent / "{}_langs.tsv".format(experiment)
     return pd.read_csv(file_path, sep="\t", header=None).values.flatten().tolist()
 
 def order_table(table, experiment):
     """Order table according to the language order defined in the experiment."""
-    assert experiment in ["tfm", "acl"], "Invalid experiment, must be 'tfm' or 'acl'"
     # Make sure the path is correct even when importing this function from somewhere else
     file_path = Path(__file__).parent / "../utils/{}_langs.tsv".format(experiment)
     all_langs = pd.read_csv(file_path, sep="\t", header=None).values.flatten()
@@ -60,7 +58,6 @@ def order_table(table, experiment):
 
 def convert_table_to_latex(table, experiment, add_color=False, add_group=True):
     """Print table in latex format, also output dataframe."""
-    assert experiment in ["tfm", "acl"], "Invalid experiment, must be 'tfm' or 'acl'"
     table = order_table(table, experiment) # In case it's not already in correct order
 
     # Retrieve language groups in correct order and add them to table
