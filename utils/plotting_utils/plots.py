@@ -44,7 +44,7 @@ def add_legend(title, fontsize, coords):
 def scatter(x, y, data, style=None, kind="lmplot", log_x=False, log_y=False, extra_fontsize=0,
             fit_reg=False, exclude=[], exclude_reg=[], xlim=None, ylim=None, custom_offsets={},
             title="", xaxis_title="", yaxis_title="", legend_coords=(1, 0.5), use_tex=True,
-            show=False):
+            show=False, remove_labels=False):
     lang_col = utils.find_lang_column(data)
     data = data[~data[lang_col].isin(exclude)] # Exclude languages
     data = utils.add_lang_groups(data, colname="Group")
@@ -111,11 +111,12 @@ def scatter(x, y, data, style=None, kind="lmplot", log_x=False, log_y=False, ext
         sns.regplot(x=x, y=y, data=data[~data[lang_col].isin(exclude_reg)], scatter=False, color="grey", ci=None)
 
     # Language names
-    for i, row in data.iterrows():
-        plt.text(row[x] + offsets[row[lang_col]][0],
-                 row[y] + offsets[row[lang_col]][1],
-                 row[lang_col], fontsize=14 + extra_fontsize,
-                 horizontalalignment="center")
+    if not remove_labels:
+        for i, row in data.iterrows():
+            plt.text(row[x] + offsets[row[lang_col]][0],
+                     row[y] + offsets[row[lang_col]][1],
+                     row[lang_col], fontsize=14 + extra_fontsize,
+                     horizontalalignment="center")
 
     # Titles, xlim, fontsize, etc
     if xlim is None:
