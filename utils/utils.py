@@ -37,14 +37,13 @@ def find_relative_path_to_root():
 
 def get_langs(experiment):
     """Return a list of all languages included in the experiment."""
+    # Make sure the path is correct even when importing this function from somewhere else
     file_path = Path(__file__).parent / "{}_langs.tsv".format(experiment)
     return pd.read_csv(file_path, sep="\t", header=None).values.flatten().tolist()
 
 def order_table(table, experiment):
     """Order table according to the language order defined in the experiment."""
-    # Make sure the path is correct even when importing this function from somewhere else
-    file_path = Path(__file__).parent / "../utils/{}_langs.tsv".format(experiment)
-    all_langs = pd.read_csv(file_path, sep="\t", header=None).values.flatten()
+    all_langs = get_langs(experiment)
     lang_colname = find_lang_column(table)
     lang_order = [lang for lang in all_langs if lang in table[lang_colname].values]
     if isinstance(table.columns, pd.MultiIndex): # Check for hierarchical columns
