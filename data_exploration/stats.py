@@ -14,7 +14,7 @@ def calc_stats(task, experiment, save_to):
         tokenizer = model_utils.get_tokenizer(short_model_name, task)
         # Basic stats
         print("Calculating basic stats for {}...".format(short_model_name))
-        basic_stats_table = basic_stats.build_stats_table(task, included_langs, tokenizer)
+        basic_stats_table = basic_stats.build_stats_table(task, included_langs, tokenizer, experiment)
         basic_stats_table.to_excel(save_to["basic_stats_" + short_model_name], index=False)
         # Lengths
         print("Calculating lengths for {}...".format(short_model_name))

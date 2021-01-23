@@ -36,6 +36,8 @@ def pos_stats(info, table, tokenizer, included_langs):
             tokens.extend(tokenized)
             lengths.append(len(tokenized))
         d[dataset + "_avg_tokens"] = [np.array(lengths).mean()]
+        d[dataset + "_longest"] = [np.max(lengths)]
+        d[dataset + "_shortest"] = [np.min(lengths)]
 
         # Hapaxes
         counts = np.array(list(Counter(tokens).items()))
@@ -77,6 +79,8 @@ def sentiment_stats(info, table, tokenizer, included_langs):
             tokens.extend(tokenized)
             lengths.append(len(tokenized))
         d[dataset + "_avg_tokens"] = [np.array(lengths).mean()]
+        d[dataset + "_longest"] = [np.max(lengths)]
+        d[dataset + "_shortest"] = [np.min(lengths)]
 
         # Hapaxes
         counts = np.array(list(Counter(tokens).items()))
@@ -93,18 +97,20 @@ def sentiment_stats(info, table, tokenizer, included_langs):
 
     return table
 
-def build_stats_table(task, included_langs, tokenizer):
+def build_stats_table(task, included_langs, tokenizer, experiment):
     funcs = {"pos": pos_stats, "sentiment": sentiment_stats}
     data_path = {"pos": "data/ud/", "sentiment": "data/sentiment/"}
     path_to_root = utils.find_relative_path_to_root()
     names = ["train", "dev", "test"]
     names_examples = (np.array(names, dtype=object) + "_examples").tolist()
     names_avg = (np.array(names, dtype=object) + "_avg_tokens").tolist()
+    names_longest = (np.array(names, dtype=object) + "_longest").tolist()
+    names_shortest = (np.array(names, dtype=object) + "_shortest").tolist()
     names_hapaxes = np.array(list(itertools.product(names, ["_hapaxes", "_hapaxes(%)"])), dtype=object)
     names_hapaxes = (names_hapaxes[:,0] + names_hapaxes[:,1]).tolist()
     names_unknown = np.array(list(itertools.product(names, ["_unknown", "_unknown(%)"])), dtype=object)
     names_unknown = (names_unknown[:,0] + names_unknown[:,1]).tolist()
-    colnames = ["language"] + names_examples + names_avg + names_hapaxes + names_unknown
+    colnames = ["language"] + names_examples + names_avg + names_longest + names_shortest + names_hapaxes + names_unknown
     values = np.empty((len(included_langs), len(colnames)))
     values[:] = np.nan
 
@@ -114,7 +120,7 @@ def build_stats_table(task, included_langs, tokenizer):
                                    tokenizer=tokenizer,
                                    included_langs=included_langs)
 
-    table = utils.order_table(table, experiment="acl")
+    table = utils.order_table(table, experiment=experiment)
     table = table.astype(dict.fromkeys([col for col in table.columns[1:] if "%" not in col and "avg" not in col],
                                         pd.Int64Dtype())) # Convert to int
     return table
