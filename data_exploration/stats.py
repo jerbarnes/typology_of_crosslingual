@@ -3,7 +3,7 @@ import logging
 import sys
 sys.path.extend(["..", "../.."])
 from utils import utils, model_utils
-from data_exploration import basic_stats, lengths, sentiment_balance, tag_stats
+from data_exploration import basic_stats, lengths, sentiment_balance, tag_stats, tokenizer_stats
 
 def calc_stats(task, experiment, save_to):
     logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
@@ -20,6 +20,10 @@ def calc_stats(task, experiment, save_to):
         print("Calculating lengths for {}...".format(short_model_name))
         lengths_table = lengths.build_lengths_table(task, short_model_name, experiment,
                                                     save_to=save_to["lengths_" + short_model_name])
+        # Tokenizer stats
+        print("Calculating tokenizer stats for {}...".format(short_model_name))
+        toke_stats_table = tokenizer_stats.build_tokenizer_stats_table(task, short_model_name, included_langs, tokenizer)
+        toke_stats_table.to_excel(save_to["tokenizer_stats_" + short_model_name], index=False)
 
     if task == "sentiment":
         # Positive/negative balance
