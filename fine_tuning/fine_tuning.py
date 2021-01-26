@@ -11,6 +11,7 @@ import seaborn as sns
 import time
 import tensorflow as tf
 import itertools
+import logging
 from datetime import timedelta
 from collections import defaultdict
 from sklearn.metrics import classification_report, f1_score
@@ -342,7 +343,7 @@ class Trainer:
 
         This only applies to the sentiment task.
         """
-        y = self.train_eval_data["sentiment"]
+        y = self.train_data["sentiment"]
         self.class_weights = {}
         classes = np.unique(y)
         for cls in classes:
@@ -748,3 +749,144 @@ class History:
     def get_best_dev(self):
         """Return best validation score, and the epoch and training time at which it was obtained."""
         return self.best_dev_score, self.best_dev_epoch, self.best_dev_total_time
+
+class LimitTrainer(Trainer):
+    def __init__(self, score_limit, *args, **kwargs):
+        self.score_limit = score_limit
+        super().__init__(*args, **kwargs)
+
+    def setup_checkpoint(self, checkpoints_path):
+        self.checkpoint_dir = checkpoints_path + self.training_lang + "/"
+        if not os.path.isdir(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir)
+        self.checkpoint_filepath = self.checkpoint_dir + self.model_name + "_{}.hdf5".format(self.task)
+        print("Final file:", self.checkpoint_filepath)
+
+    def load_data_pos(self, dataset_name):
+        logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
+        filepath = glob.glob(self.lang_path + "/*{}.conllu".format(dataset_name))
+        assert len(filepath) == 1
+        data = data_preparation_pos.read_conll(filepath[0])
+
+        examples = []
+        for sent_id, tokens, tags in zip(data[0], data[1], data[2]):
+            if len(self.tokenizer.subword_tokenize(tokens, tags)[0]) <= self.max_length:
+                examples.append({"id": sent_id, "tokens": tokens, "tags": tags})
+
+        return examples
+
+    def load_data_sentiment(self, dataset_name):
+        logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
+        df = pd.read_csv(self.lang_path + "/{}.csv".format(dataset_name), header=None)
+        df.columns = ["sentiment", "review"]
+        df["sentiment"] = pd.to_numeric(df["sentiment"])
+
+        lengths = df["review"].apply(lambda x: len(self.tokenizer.encode(x)))
+        df = df[lengths <= self.max_length].reset_index(drop=True) # Remove long examples
+        return df
+
+    def prepare_data(self):
+        if self.task == "pos":
+            self.train_data = self.load_data_pos("train")
+            self.dev_data = self.load_data_pos("dev")
+            self.setup_eval_pos(self.dev_data, "dev")
+        elif self.task == "sentiment":
+            self.train_data = self.load_data_sentiment("train")
+            self.dev_data = self.load_data_sentiment("dev")
+
+    def shuffle_data(self, data):
+        if self.task == "pos":
+            np.random.shuffle(data)
+        elif self.task == "sentiment":
+            data = data.sample(frac=1)
+        return data
+
+    def convert_data(self, data):
+        if self.task == "pos":
+            params = {
+                "examples": data,
+                "tokenizer": self.tokenizer,
+                "tagset": self.tagset,
+                "max_length": self.max_length
+            }
+            if self.short_model_name == "mbert":
+                dataset = data_preparation_pos.bert_convert_examples_to_tf_dataset(**params)
+            elif self.short_model_name == "xlm-roberta":
+                dataset = data_preparation_pos.roberta_convert_examples_to_tf_dataset(**params)
+
+        elif self.task == "sentiment":
+            params = {
+                "examples": [(data_preparation_sentiment.Example(
+                                text=text, category_index=label)
+                             ) for label, text in data.values],
+                "tokenizer": self.tokenizer,
+                "max_length": self.max_length
+            }
+            if self.short_model_name == "mbert":
+                dataset = data_preparation_sentiment.bert_convert_examples_to_tf_dataset(**params)
+            elif self.short_model_name == "xlm-roberta":
+                dataset = data_preparation_sentiment.roberta_convert_examples_to_tf_dataset(**params)
+
+        return dataset
+
+    def show_time(self):
+        """Display time elapsed."""
+        elapsed = time.time() - self.start_time # Start time is set at the start of epoch 0
+        print("{:<25}{:<25}".format("Elapsed:", str(timedelta(seconds=np.round(elapsed)))))
+
+    def train(self, batches_per_eval):
+        # Make sure class weights are calculated if they are needed
+        if self.use_class_weights and not self.class_weights:
+            print("Calculating class weights")
+            self.calc_class_weights()
+            print(self.class_weights)
+
+        num_batches = np.floor(len(self.train_data) / self.train_batch_size)
+        start_batch = 0
+
+        self.train_data = self.shuffle_data(self.train_data)
+        dev_dataset = self.convert_data(self.dev_data)
+        dev_dataset, dev_batches = model_utils.make_batches(
+            dev_dataset, self.eval_batch_size, repetitions=1, shuffle=False
+        )
+
+        self.start_time = time.time()
+        start_batch = 0
+        epoch = 0
+        print("Epoch 0\n-------")
+
+        dev_score = 0
+
+        while dev_score < self.score_limit - 0.01:
+            if start_batch > num_batches:
+                start_batch = 0
+                self.train_data = self.shuffle_data(self.train_data)
+                self.show_time()
+                epoch += 1
+                print("Epoch {}\n-------".format(epoch))
+
+            # Setup train subset
+            start_data = start_batch * self.train_batch_size
+            end_data = start_data + batches_per_eval * self.train_batch_size
+            train_dataset = self.convert_data(self.train_data[start_data:end_data])
+            train_dataset, train_batches = model_utils.make_batches(
+                train_dataset, self.train_batch_size, repetitions=1, shuffle=False
+            )
+
+            # Train
+            hist = self.model.fit(train_dataset, epochs=1,
+                                  steps_per_epoch=batches_per_eval,
+                                  class_weight=self.class_weights, verbose=1)
+
+            # Evaluate on dev only
+            dev_preds = self.model.predict(dev_dataset, steps=dev_batches, verbose=1)
+            dev_score = self.metric(dev_preds, self.dev_data, "dev")
+            print("Dev Score:", dev_score)
+
+            # Update starting batch for next iteration
+            start_batch += batches_per_eval
+
+        print("Saving weights to", self.checkpoint_filepath)
+        self.model.save_weights(self.checkpoint_filepath)
+
+        return dev_score
