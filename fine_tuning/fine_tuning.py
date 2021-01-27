@@ -834,7 +834,7 @@ class LimitTrainer(Trainer):
         elapsed = time.time() - self.start_time # Start time is set at the start of epoch 0
         print("{:<25}{:<25}".format("Elapsed:", str(timedelta(seconds=np.round(elapsed)))))
 
-    def train(self, batches_per_eval):
+    def train(self, batches_per_eval, auto_adjust=False):
         # Make sure class weights are calculated if they are needed
         if self.use_class_weights and not self.class_weights:
             print("Calculating class weights")
@@ -856,6 +856,7 @@ class LimitTrainer(Trainer):
         print("Epoch 0\n-------")
 
         dev_score = 0
+        initial_batches_per_eval = batches_per_eval # Necessary for auto-adjust
 
         while dev_score < self.score_limit - 0.01:
             if start_batch > num_batches:
@@ -882,6 +883,10 @@ class LimitTrainer(Trainer):
             dev_preds = self.model.predict(dev_dataset, steps=dev_batches, verbose=1)
             dev_score = self.metric(dev_preds, self.dev_data, "dev")
             print("Dev Score:", dev_score)
+
+            if auto_adjust:
+                k = (self.score_limit - dev_score) / self.score_limit
+                batches_per_eval = int(np.ceil(initial_batches_per_eval * k))
 
             # Update starting batch for next iteration
             start_batch += batches_per_eval
