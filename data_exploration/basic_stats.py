@@ -46,7 +46,7 @@ def pos_stats(info, table, tokenizer, included_langs):
         d[dataset + "_hapaxes(%)"] = [len(hapaxes) / len(tokens) * 100]
 
         # Unknown
-        unk = (np.array(tokens) == "[UNK]").sum()
+        unk = (np.array(tokens) == tokenizer.unk_token).sum()
         d[dataset + "_unknown"] = [unk]
         d[dataset + "_unknown(%)"] = [unk / len(tokens) * 100]
 
