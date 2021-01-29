@@ -283,7 +283,7 @@ class Trainer:
         num_examples = df.loc[df["language"] == utils.code_to_name[self.training_lang], self.max_length].values[0]
         return num_examples
 
-    def prepare_data(self, limit=None, train_eval_subsample=None, train_subsample=None):
+    def prepare_data(self, limit=None, train_eval_subsample=None, train_subsample=None, num_examples=None):
         """Load and preprocess all data."""
         datasets = {}
         dataset_names = ["train", "dev", "train_eval"]
@@ -295,7 +295,8 @@ class Trainer:
                 sample = train_eval_subsample # Set sample only for train eval
             elif train_subsample and dataset_name.startswith("train"):
                 if sample_idxs is None: # Do this once only
-                    num_examples = self.num_examples_under_maxlen()
+                    if num_examples is None:
+                        num_examples = self.num_examples_under_maxlen()
                     sample_idxs = np.random.choice(num_examples, size=train_subsample, replace=False)
             # Load plain data and TF dataset
             if self.task == "pos":
@@ -761,6 +762,8 @@ class LimitTrainer(Trainer):
             os.makedirs(self.checkpoint_dir)
         self.checkpoint_filepath = self.checkpoint_dir + self.model_name + "_{}.hdf5".format(self.task)
         print("Final file:", self.checkpoint_filepath)
+        self.temp_weights_filepath = self.checkpoint_dir + self.model_name + "_temp.hdf5"
+        print("Temp weights file:", self.temp_weights_filepath)
 
     def load_data_pos(self, dataset_name):
         logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR) # Avoid max length warning
@@ -834,7 +837,7 @@ class LimitTrainer(Trainer):
         elapsed = time.time() - self.start_time # Start time is set at the start of epoch 0
         print("{:<25}{:<25}".format("Elapsed:", str(timedelta(seconds=np.round(elapsed)))))
 
-    def train(self, batches_per_eval, auto_adjust=False):
+    def train(self, batches_per_eval, auto_adjust=False, save_freq=None):
         # Make sure class weights are calculated if they are needed
         if self.use_class_weights and not self.class_weights:
             print("Calculating class weights")
@@ -854,17 +857,20 @@ class LimitTrainer(Trainer):
         start_batch = 0
         epoch = 0
         print("Epoch 0\n-------")
+        it = 0
 
         dev_score = 0
         initial_batches_per_eval = batches_per_eval # Necessary for auto-adjust
 
         while dev_score < self.score_limit - 0.01:
+            print("\n\n")
             if start_batch > num_batches:
                 start_batch = 0
                 self.train_data = self.shuffle_data(self.train_data)
                 self.show_time()
                 epoch += 1
                 print("Epoch {}\n-------".format(epoch))
+                it = 0
 
             # Setup train subset
             start_data = start_batch * self.train_batch_size
@@ -884,14 +890,27 @@ class LimitTrainer(Trainer):
             dev_score = self.metric(dev_preds, self.dev_data, "dev")
             print("Dev Score:", dev_score)
 
-            if auto_adjust:
-                k = (self.score_limit - dev_score) / self.score_limit
-                batches_per_eval = int(np.ceil(initial_batches_per_eval * k))
+            if os.path.isfile(self.temp_weights_filepath) and dev_score > self.score_limit + 0.025:
+                # Score is too high, retry from last checkpoint
+                print("Score too high, going back")
+                self.model.load_weights(self.temp_weights_filepath)
+                # Overwrite initial batches per eval value so evaluation frequency will increase
+                initial_batches_per_eval = int(np.ceil(batches_per_eval / 2))
+                dev_score = 0 # Force another iteration
+            else: # Don't save or adjust eval frequency if you just loaded older weights
+                if save_freq and it % save_freq == 0:
+                    print("Saving temp weights...")
+                    self.model.save_weights(self.temp_weights_filepath)
+                if auto_adjust:
+                    k = (self.score_limit - dev_score) / self.score_limit
+                    batches_per_eval = int(np.ceil(initial_batches_per_eval * k))
 
             # Update starting batch for next iteration
             start_batch += batches_per_eval
+            it += 1
 
         print("Saving weights to", self.checkpoint_filepath)
         self.model.save_weights(self.checkpoint_filepath)
+        os.remove(self.temp_weights_filepath)
 
         return dev_score
