@@ -1,0 +1,9 @@
+var	coef	std_err	t	p-value	low	high
+Constant	31.8537	1.274	24.998	0.0	29.346	34.361
+Within-Score	4.1359	0.634	6.524	0.0	2.888	5.384
+avg_split_words_train(%)	2.2632	0.741	3.056	0.002	0.806	3.721
+avg_chars_per_word_train	-3.3861	0.719	-4.712	0.0	-4.8	-1.972
+avg_split_words_test(%)	7.9759	0.694	11.486	0.0	6.609	9.342
+avg_chars_per_word_test	-11.8257	0.695	-17.016	0.0	-13.193	-10.458
+train_multiwords(%)	-1.8711	0.614	-3.048	0.003	-3.079	-0.663
+Transfer-Type	8.7848	1.434	6.128	0.0	5.964	11.606

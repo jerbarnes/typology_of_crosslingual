@@ -1,0 +1,8 @@
+var	coef	std_err	t	p-value	low	high
+Constant	29.5154	1.597	18.482	0.0	26.373	32.658
+Within-Score	3.056	0.729	4.191	0.0	1.621	4.491
+test_avg_tokens	3.0274	0.787	3.846	0.0	1.478	4.577
+test_hapaxes(%)	2.262	0.784	2.886	0.004	0.72	3.804
+CCGiB_testlang	-4.2008	0.739	-5.684	0.0	-5.655	-2.746
+avg_chars_per_word_test	-6.3457	0.776	-8.174	0.0	-7.873	-4.818
+Transfer-Type	8.8856	1.797	4.945	0.0	5.349	12.422
