@@ -862,6 +862,9 @@ class LimitTrainer(Trainer):
         dev_score = 0
         initial_batches_per_eval = batches_per_eval # Necessary for auto-adjust
 
+        print("Saving temp weights...")
+        self.model.save_weights(self.temp_weights_filepath)
+
         while dev_score < self.score_limit - 0.01:
             print("\n\n")
             if start_batch > num_batches:
@@ -895,7 +898,8 @@ class LimitTrainer(Trainer):
                 print("Score too high, going back")
                 self.model.load_weights(self.temp_weights_filepath)
                 # Overwrite initial batches per eval value so evaluation frequency will increase
-                initial_batches_per_eval = int(np.ceil(batches_per_eval / 2))
+                initial_batches_per_eval = int(np.ceil(initial_batches_per_eval / 2))
+                batches_per_eval = int(np.ceil(initial_batches_per_eval / 2))
                 dev_score = 0 # Force another iteration
             else: # Don't save or adjust eval frequency if you just loaded older weights
                 if save_freq and it % save_freq == 0:
