@@ -1,1 +1,1 @@
-from . import linear_regression
+from . import linear_regression, analysis_of_variance
