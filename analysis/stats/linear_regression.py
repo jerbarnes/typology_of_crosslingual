@@ -20,10 +20,12 @@ def load_data(task, short_model_name, experiment):
     return df
 
 def preprocess(df, columns_to_drop):
-    X = df.drop(columns_to_drop, axis=1)
-    names = X.columns.tolist()
-    X = preprocessing.scale(X.iloc[:, :-1], axis=0)
-    X = np.hstack((X, df[["Transfer-Type"]].values))
+    temp = df.drop(columns_to_drop, axis=1)
+    noncat = np.where(temp.apply(lambda x: len(np.unique(x))) != 2)[0] # Will need to improve this
+    cat = list(set(np.arange(temp.shape[1])) - set(noncat))
+    names = temp.columns.tolist()
+    X = preprocessing.scale(temp.iloc[:, noncat], axis=0)
+    X = np.hstack((X, temp.iloc[:, cat].values))
     y = df["Transfer-Loss"].values
     X = sm.add_constant(X)
     return X, y, names
@@ -44,7 +46,7 @@ def fit_model(X, y, names, output_filepath):
 
     return results_summary, summary_table, pvalues, vifs
 
-def stepwise(task, short_model_name, experiment, p=0.01, v=5):
+def stepwise(task, short_model_name, experiment, p=0.01, check_vifs=False, v=5):
     df = load_data(task, short_model_name, experiment)
     columns_to_drop = ["Train-Language", "Train-Group", "Test-Language",
                        "Test-Group", "Transfer-Loss", "Cross-Score"]
@@ -65,7 +67,7 @@ def stepwise(task, short_model_name, experiment, p=0.01, v=5):
         vif_cond = np.any(np.array(vifs)[:-1] > v)
         pvalue_cond = np.any(pvalues[:-1] > p)
 
-        if vif_cond:
+        if vif_cond and check_vifs:
             idxmax = summary_table.drop(summary_table.shape[0] - 1)["vif"].idxmax()
             excluded = summary_table.at[idxmax, "var"]
             columns_to_drop.append(excluded)
