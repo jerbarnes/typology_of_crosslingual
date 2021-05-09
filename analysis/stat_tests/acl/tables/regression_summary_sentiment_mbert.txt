@@ -1,47 +1,34 @@
-Dropping train_avg_tokens, VIF = 119.90970588963879
-Dropping test_avg_tokens, VIF = 63.642943253169804
-Dropping avg_chars_per_word_test, VIF = 25.572492675098776
-Dropping avg_chars_per_word_train, VIF = 19.81048562870992
-Dropping avg_words_train, VIF = 12.93674586843851
-Dropping avg_words_test, VIF = 7.726953826552251
-Dropping avg_subwords_per_word_train, p-value = 0.65
-Dropping avg_subwords_per_word_test, p-value = 0.5670000000000001
-Dropping positive_frequency_testlang, p-value = 0.16899999999999998
-Dropping avg_split_words_test(%), p-value = 0.32899999999999996
-Dropping positive_frequency_trainlang, p-value = 0.013000000000000001
-Dropping WikiArticles_trainlang, p-value = 0.03
-Dropping test_hapaxes(%), p-value = 0.012
+Dropping train_avg_tokens, p-value = 0.802
+Dropping positive_frequency_testlang, p-value = 0.319
+Dropping avg_split_words_test(%), p-value = 0.026000000000000002
+Dropping test_avg_tokens, p-value = 0.027000000000000003
+Dropping positive_frequency_trainlang, p-value = 0.02
 
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:                      y   R-squared:                       0.430
+Dep. Variable:                      y   R-squared:                       0.421
 Model:                            OLS   Adj. R-squared:                  0.413
-Method:                 Least Squares   F-statistic:                     24.95
-Date:                Thu, 28 Jan 2021   Prob (F-statistic):           4.92e-35
-Time:                        21:42:43   Log-Likelihood:                -1248.0
-No. Observations:                 342   AIC:                             2518.
-Df Residuals:                     331   BIC:                             2560.
-Df Model:                          10                                         
+Method:                 Least Squares   F-statistic:                     48.93
+Date:                Sun, 31 Jan 2021   Prob (F-statistic):           5.58e-38
+Time:                        19:06:09   Log-Likelihood:                -1250.5
+No. Observations:                 342   AIC:                             2513.
+Df Residuals:                     336   BIC:                             2536.
+Df Model:                           5                                         
 Covariance Type:            nonrobust                                         
 ============================================================================================
                                coef    std err          t      P>|t|      [0.025      0.975]
 --------------------------------------------------------------------------------------------
-Constant                    29.9392      1.115     26.847      0.000      27.745      32.133
-Within-Score                11.0240      0.798     13.814      0.000       9.454      12.594
-train_examples              -5.7402      1.010     -5.681      0.000      -7.728      -3.753
-train_hapaxes(%)             4.6796      0.800      5.853      0.000       3.107       6.252
-train_unknown(%)             7.2111      1.010      7.142      0.000       5.225       9.197
-test_unknown(%)              1.4500      0.525      2.760      0.006       0.417       2.483
-WikiArticles_testlang       -2.8116      0.574     -4.895      0.000      -3.941      -1.682
-avg_split_words_train(%)     5.4271      0.646      8.395      0.000       4.155       6.699
-avg_chars_train              4.4801      0.694      6.456      0.000       3.115       5.845
-avg_chars_test               1.8538      0.564      3.289      0.001       0.745       2.963
-Transfer-Type                2.7379      1.255      2.181      0.030       0.268       5.207
+Constant                    48.6498      2.099     23.179      0.000      44.521      52.778
+Within-Score                 6.7805      0.549     12.353      0.000       5.701       7.860
+avg_split_words_train(%)     3.3457      0.540      6.191      0.000       2.283       4.409
+Pretrained_trainlang       -11.7716      1.438     -8.183      0.000     -14.601      -8.942
+Pretrained_testlang        -10.2617      1.405     -7.306      0.000     -13.025      -7.499
+Transfer-Type                2.5401      1.255      2.024      0.044       0.071       5.009
 ==============================================================================
-Omnibus:                       13.748   Durbin-Watson:                   1.697
-Prob(Omnibus):                  0.001   Jarque-Bera (JB):               15.581
-Skew:                           0.403   Prob(JB):                     0.000414
-Kurtosis:                       3.665   Cond. No.                         4.88
+Omnibus:                       17.935   Durbin-Watson:                   1.512
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               20.043
+Skew:                           0.506   Prob(JB):                     4.44e-05
+Kurtosis:                       3.620   Cond. No.                         8.75
 ==============================================================================
 
 Notes:

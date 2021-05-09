@@ -1,47 +1,32 @@
-Dropping avg_words_train, VIF = 544.3181516180433
-Dropping avg_words_test, VIF = 369.73756981501054
-Dropping CCMTokens_trainlang, VIF = 71.67192975822027
-Dropping train_avg_tokens, VIF = 35.028237677638955
-Dropping avg_chars_test, VIF = 25.384828490780468
-Dropping avg_split_words_test(%), VIF = 22.682600369620133
-Dropping avg_split_words_train(%), VIF = 15.900677099483742
-Dropping CCMTokens_testlang, VIF = 14.24666466338878
-Dropping train_hapaxes(%), VIF = 5.674390428602983
-Dropping train_examples, p-value = 0.925
-Dropping CCGiB_trainlang, p-value = 0.8109999999999999
-Dropping test_multiwords(%), p-value = 0.642
-Dropping avg_chars_train, p-value = 0.292
-Dropping avg_subwords_per_word_train, p-value = 0.201
-Dropping avg_subwords_per_word_test, p-value = 0.018000000000000002
-Dropping avg_chars_per_word_train, p-value = 0.017
-Dropping train_multiwords(%), p-value = 0.027000000000000003
+Dropping train_avg_tokens, p-value = 0.547
+Dropping Pretrained_trainlang, p-value = 0.106
+Dropping avg_split_words_train(%), p-value = 0.026000000000000002
 
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:                      y   R-squared:                       0.379
-Model:                            OLS   Adj. R-squared:                  0.366
-Method:                 Least Squares   F-statistic:                     30.37
-Date:                Thu, 28 Jan 2021   Prob (F-statistic):           2.12e-28
-Time:                        18:26:34   Log-Likelihood:                -1209.4
-No. Observations:                 306   AIC:                             2433.
-Df Residuals:                     299   BIC:                             2459.
-Df Model:                           6                                         
+Dep. Variable:                      y   R-squared:                       0.563
+Model:                            OLS   Adj. R-squared:                  0.556
+Method:                 Least Squares   F-statistic:                     77.25
+Date:                Sun, 31 Jan 2021   Prob (F-statistic):           7.39e-52
+Time:                        19:05:53   Log-Likelihood:                -1155.6
+No. Observations:                 306   AIC:                             2323.
+Df Residuals:                     300   BIC:                             2346.
+Df Model:                           5                                         
 Covariance Type:            nonrobust                                         
 ===========================================================================================
                               coef    std err          t      P>|t|      [0.025      0.975]
 -------------------------------------------------------------------------------------------
-Constant                   29.5154      1.597     18.482      0.000      26.373      32.658
-Within-Score                3.0560      0.729      4.191      0.000       1.621       4.491
-test_avg_tokens             3.0274      0.787      3.846      0.000       1.478       4.577
-test_hapaxes(%)             2.2620      0.784      2.886      0.004       0.720       3.804
-CCGiB_testlang             -4.2008      0.739     -5.684      0.000      -5.655      -2.746
-avg_chars_per_word_test    -6.3457      0.776     -8.174      0.000      -7.873      -4.818
-Transfer-Type               8.8856      1.797      4.945      0.000       5.349      12.422
+Constant                   50.6310      2.021     25.049      0.000      46.653      54.609
+Within-Score                2.8749      0.611      4.708      0.000       1.673       4.077
+test_avg_tokens             4.1662      0.644      6.472      0.000       2.899       5.433
+avg_split_words_test(%)     2.1402      0.676      3.166      0.002       0.810       3.471
+Pretrained_testlang       -24.7817      1.763    -14.056      0.000     -28.251     -21.312
+Transfer-Type               8.5034      1.502      5.663      0.000       5.548      11.458
 ==============================================================================
-Omnibus:                       17.144   Durbin-Watson:                   1.223
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):               18.393
-Skew:                           0.570   Prob(JB):                     0.000101
-Kurtosis:                       3.376   Cond. No.                         4.18
+Omnibus:                        0.975   Durbin-Watson:                   1.322
+Prob(Omnibus):                  0.614   Jarque-Bera (JB):                0.964
+Skew:                          -0.136   Prob(JB):                        0.618
+Kurtosis:                       2.955   Cond. No.                         6.68
 ==============================================================================
 
 Notes:
