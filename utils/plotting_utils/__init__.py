@@ -1,1 +1,1 @@
-from . import label_placement, plots
+from . import plots
