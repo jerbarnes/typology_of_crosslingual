@@ -295,7 +295,7 @@ class Tester:
         with pd.ExcelWriter(self.results_path) as writer:
             for sheet_name, df in results.items():
                 if training_lang is not None:
-                    # Add each the column for each metric (=sheet_name) in the corresponding sheet
+                    # Add the column for each metric (=sheet_name) in the corresponding sheet
                     df[training_lang] = table[sheet_name]
                 elif testing_lang is not None:
                     # Delete old values if they exist
